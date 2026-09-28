@@ -81,4 +81,20 @@ describe('readDexSource', () => {
       /Cannot read DEX_SOURCE \.\/missing\.jsonl: ENOENT/,
     );
   });
+
+  it('fails before any fetch when a token is required and missing', async () => {
+    const { fetch, calls } = fakeFetch({});
+    await expect(readDexSource({ fetch, requireToken: true })).rejects.toThrow(
+      /GITHUB_TOKEN is required on Vercel/,
+    );
+    expect(calls).toHaveLength(0);
+  });
+
+  it('does not require a token when DEX_SOURCE is set', async () => {
+    const readFile = async () => 'LOG';
+    await expect(readDexSource({ source: './x.jsonl', readFile, requireToken: true })).resolves.toEqual({
+      text: 'LOG',
+      origin: './x.jsonl',
+    });
+  });
 });

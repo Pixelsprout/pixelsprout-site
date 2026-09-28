@@ -12,6 +12,7 @@ export type FetchLike = (url: string, init?: { headers?: Record<string, string> 
 export type DexSourceOptions = {
   source?: string;
   token?: string;
+  requireToken?: boolean;
   fetch?: FetchLike;
   readFile?: (path: string) => Promise<string>;
 };
@@ -50,6 +51,11 @@ export async function readDexSource(options: DexSourceOptions = {}): Promise<{ t
       ? await fetchText(fetcher, options.source)
       : await readPath(readFile, options.source);
     return { text, origin: options.source };
+  }
+
+  // Vercel build machines share outgoing IPs, so the 60 requests an hour for unauthenticated calls runs out.
+  if (options.requireToken && !options.token) {
+    throw new DexError('GITHUB_TOKEN is required on Vercel. Add a fine-grained token with no permissions to the project.');
   }
 
   // A branch URL on raw.githubusercontent.com is cached for up to 5 minutes; a commit URL is not stale.

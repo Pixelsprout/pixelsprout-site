@@ -2858,7 +2858,7 @@ Expected: the CI workflow passes on the pull request. Ask the owner whether the 
 
 1. In Vercel, import `Pixelsprout/pixelsprout-site`. Keep the Astro framework preset.
 2. In Settings → Build and Deployment, set Node.js Version to 24.x.
-3. Optional: in Settings → Environment Variables, add `GITHUB_TOKEN` (a fine-grained token with no permissions, used only to raise the rate limit) for Production and Preview.
+3. Required: in Settings → Environment Variables, add `GITHUB_TOKEN` for Production and Preview. Use a fine-grained GitHub token with public-repo read access only and no extra permissions. Vercel builds fail without it, because shared build IPs exhaust the unauthenticated API limit.
 4. Merge the pull request. Vercel builds `main` to production.
 5. Open the `*.vercel.app` URL. Check that the homepage shows the plant and `nothing published yet`.
 

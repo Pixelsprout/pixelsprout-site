@@ -9,6 +9,7 @@ export function dexLoader(): Loader {
       const { text, origin } = await readDexSource({
         source: process.env.DEX_SOURCE,
         token: process.env.GITHUB_TOKEN,
+        requireToken: Boolean(process.env.VERCEL),
       });
       const entries = parseDex(text);
       store.clear();
