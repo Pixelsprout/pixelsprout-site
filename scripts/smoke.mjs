@@ -5,7 +5,7 @@ import { join } from 'node:path';
 const fixtureEnv = { DEX_SOURCE: 'test/fixtures/tasks.jsonl', VERCEL_ENV: 'production' };
 
 function build(env) {
-  execFileSync('npx', ['astro', 'build'], { stdio: 'inherit', env: { ...process.env, ...fixtureEnv, ...env } });
+  execFileSync('pnpm', ['exec', 'astro', 'build'], { stdio: 'inherit', env: { ...process.env, ...fixtureEnv, ...env } });
 }
 
 function fail(message) {

@@ -12,6 +12,7 @@
 
 ## Global Constraints
 
+- Package manager: pnpm (`packageManager: pnpm@11.17.0`), switched from npm at the owner's request after Task 15. Read `npm install`, `npm run X` and `npx X` in the tasks below as `pnpm install`, `pnpm run X` and `pnpm exec X`. `shiki` is a direct dev dependency, because pnpm does not hoist it.
 - Node: `>=24` in `package.json` `engines`. Vercel builds on Node 24.
 - TypeScript: `^6` (`@astrojs/check` 0.9 supports `^5 || ^6` only). Do not install TypeScript 7.
 - Import Zod from `astro/zod`, never from `zod`.

@@ -23,7 +23,7 @@ rocco is a 3D game engine in Odin that runs games written in Roc
 | Framework | Astro, from the `minimal` template, with `@astrojs/mdx`, `@astrojs/rss`, `@astrojs/sitemap` |
 | Look | "Soil Terminal": dark, monospace, terminal prompts, git-log post list |
 | Progress source | `.dex/tasks.jsonl` in rocco-engine, fetched at build time |
-| Hosting | Vercel, static output, Node 24, npm |
+| Hosting | Vercel, static output, Node 24, pnpm |
 | Repo | `github.com/Pixelsprout/pixelsprout-site`, local at `~/projects/personal-site` |
 | Domain | `pixelsprout.dev` on Cloudflare DNS; `www` redirects to the apex |
 | Theme | Dark only |
