@@ -1,0 +1,45 @@
+---
+const links = [
+  { href: '/devlog/', label: './devlog' },
+  { href: '/projects/', label: './projects' },
+  { href: '/rss.xml', label: 'rss.xml' },
+  { href: 'https://github.com/Pixelsprout', label: 'github' },
+];
+const path = Astro.url.pathname;
+---
+<header class="site-header">
+  <a class="brand" href="/">
+    <img src="/pixelsprout.png" alt="" width="40" height="40" />
+    <span>pixelsprout<span class="cursor">_</span></span>
+  </a>
+  <nav aria-label="Site">
+    {links.map((link) => (
+      <a href={link.href} aria-current={path.startsWith(link.href) ? 'page' : undefined}>{link.label}</a>
+    ))}
+  </nav>
+</header>
+
+<style>
+  .site-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--edge);
+  }
+  .brand { display: flex; align-items: center; gap: 14px; color: var(--text); text-decoration: none; }
+  .brand:hover { text-decoration: none; }
+  .brand img { image-rendering: pixelated; }
+  .brand > span { font-family: var(--font-pixel); font-size: 26px; font-weight: 600; }
+  .cursor { color: var(--sprout); }
+  nav { display: flex; flex-wrap: wrap; gap: 0 24px; font-size: 14px; }
+  nav a { min-height: 44px; display: inline-flex; align-items: center; }
+  nav a[aria-current='page'] { color: var(--clay); }
+  @media (max-width: 720px) {
+    .brand img { width: 32px; height: 32px; }
+    .brand > span { font-size: 22px; }
+    nav { gap: 0 16px; }
+  }
+</style>

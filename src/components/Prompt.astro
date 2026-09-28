@@ -1,0 +1,10 @@
+---
+type Props = { command: string; path?: string };
+const { command, path = '~/pixelsprout' } = Astro.props;
+---
+<div class="prompt"><span class="path">{path}</span> $ {command}</div>
+
+<style>
+  .prompt { color: var(--text-muted); font-size: 14px; overflow-wrap: anywhere; }
+  .path { color: var(--sprout); }
+</style>

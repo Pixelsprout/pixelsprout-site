@@ -1,0 +1,51 @@
+---
+import '@fontsource/pixelify-sans/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/600.css';
+import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+
+type Props = { title: string; description?: string };
+const {
+  title,
+  description = 'Pixelsprout: building rocco, a 3D engine in Odin that runs games written in Roc.',
+} = Astro.props;
+const pageTitle = title === 'pixelsprout' ? title : `${title} · pixelsprout`;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/png" href="/pixelsprout.png" />
+    <link rel="alternate" type="application/rss+xml" title="pixelsprout devlog" href="/rss.xml" />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+  </head>
+  <body>
+    <div class="page">
+      <SiteHeader />
+      <main><slot /></main>
+      <SiteFooter />
+    </div>
+    <script is:inline>
+      document.querySelectorAll('.code').forEach((frame) => {
+        const bar = frame.querySelector('.code-bar');
+        const code = frame.querySelector('pre code');
+        if (!bar || !code || !navigator.clipboard) return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'copy';
+        button.textContent = 'copy';
+        button.addEventListener('click', async () => {
+          await navigator.clipboard.writeText(code.textContent || '');
+          button.textContent = 'copied';
+          setTimeout(() => { button.textContent = 'copy'; }, 1500);
+        });
+        bar.append(button);
+      });
+    </script>
+  </body>
+</html>
