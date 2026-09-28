@@ -117,8 +117,18 @@ Give stubs for future work the build date and leave them as drafts.
 
 ### 4.1 Source
 
-- Default: `https://raw.githubusercontent.com/Pixelsprout/rocco-engine/main/.dex/tasks.jsonl`.
-- Override: the `DEX_SOURCE` environment variable. It accepts a URL or a local file path.
+By default the loader pins the fetch to a commit. `raw.githubusercontent.com`
+caches a branch URL for up to 5 minutes, so a build that the deploy hook starts
+could read the old file.
+
+1. Send `GET https://api.github.com/repos/Pixelsprout/rocco-engine/commits/main`. Read `sha`.
+2. Fetch `https://raw.githubusercontent.com/Pixelsprout/rocco-engine/<sha>/.dex/tasks.jsonl`.
+3. Log the SHA in the build output.
+
+- If the `GITHUB_TOKEN` environment variable is set, send it as a bearer token in step 1.
+  Without it, the API allows 60 requests an hour.
+- The `DEX_SOURCE` environment variable overrides the default. It accepts a URL or a local file path.
+  With `DEX_SOURCE`, the loader skips steps 1 and 2 and reads that source.
 
 ### 4.2 Parsing
 
@@ -157,6 +167,7 @@ Every error fails the build. Vercel keeps the last good deployment live.
 
 | Case | Message names |
 |---|---|
+| Commit lookup fails, or its status is not 200 | The API URL and the status. A 403 also names `GITHUB_TOKEN`. |
 | Fetch fails or status is not 200 | The source and the status |
 | Row fails the schema | The line number and the field |
 | No root, or no milestones | The expected root name and milestone pattern |
@@ -247,8 +258,11 @@ Every error fails the build. Vercel keeps the last good deployment live.
 3. Add `.github/workflows/grow-site.yml` to rocco-engine.
    It runs on a push to `main` that changes `.dex/tasks.jsonl`, and it sends `POST` to the hook.
 
-The owner creates the hook and the secret. The implementer writes the workflow file
-and does not push it until the owner says so.
+The workflow file exists as commit `0f81555` on branch `ci/grow-site` in rocco-engine.
+It is not pushed. It runs only on a push to `main` that changes `.dex/tasks.jsonl`, or by hand.
+If the secret is not set, the job logs a warning and succeeds.
+
+The owner creates the hook and the secret, then merges and pushes the branch.
 
 ## 8. Testing
 
