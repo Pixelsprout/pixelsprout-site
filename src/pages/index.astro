@@ -23,14 +23,14 @@ const latest = posts[0];
   <section class="log">
     <Prompt command="git log devlog --oneline" />
     <GitLog posts={posts.slice(0, 5)} />
-    {posts.length > 5 && <a class="more" href="/devlog/">all posts →</a>}
+    {posts.length > 5 && <a class="more tap" href="/devlog/">all posts →</a>}
   </section>
 
   {latest && (
     <section class="latest">
       <h2>Latest: {latest.data.title}</h2>
       <p>{latest.data.summary}</p>
-      <a href={`/devlog/${slugOf(latest)}/`}>read the post →</a>
+      <a class="tap" href={`/devlog/${slugOf(latest)}/`}>read the post →</a>
     </section>
   )}
 </Base>

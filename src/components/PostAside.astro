@@ -32,13 +32,13 @@ const sections = headings.filter((h) => h.depth === 2);
   {post.data.commits.length > 0 && (
     <div class="group">
       <span class="heading">commits</span>
-      {post.data.commits.map((hash) => <a class="hash" href={commitUrl(hash)}>{hash.slice(0, 7)}</a>)}
+      {post.data.commits.map((hash) => <a class="hash tap" href={commitUrl(hash)}>{hash.slice(0, 7)}</a>)}
     </div>
   )}
   {sections.length > 0 && (
     <nav class="group" aria-label="On this page">
       <span class="heading">on this page</span>
-      {sections.map((h) => <a href={`#${h.slug}`}>{h.text}</a>)}
+      {sections.map((h) => <a class="tap" href={`#${h.slug}`}>{h.text}</a>)}
     </nav>
   )}
 </aside>
@@ -48,7 +48,7 @@ const sections = headings.filter((h) => h.depth === 2);
   .planter { display: flex; flex-direction: column; gap: 12px; }
   .pot { display: flex; flex-direction: column; align-items: center; padding: 20px 20px 0; background: var(--soil-raised); }
   .growth { margin: 0; text-align: center; color: var(--sprout); }
-  .group { display: flex; flex-direction: column; gap: 6px; }
+  .group { display: flex; flex-direction: column; }
   .heading { color: var(--text); }
   .hash { color: var(--clay); }
 </style>
