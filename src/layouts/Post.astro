@@ -8,12 +8,12 @@ import type { Post } from '../lib/content';
 import type { GardenEntry } from '../lib/dex';
 import { formatDate, slugOf, tagOf } from '../lib/post-meta';
 
-type Props = { post: Post; headings: MarkdownHeading[]; older?: Post; newer?: Post; garden: GardenEntry[] };
-const { post, headings, older, newer, garden } = Astro.props;
+type Props = { post: Post; headings: MarkdownHeading[]; older?: Post; newer?: Post; previous?: Post; garden: GardenEntry[] };
+const { post, headings, older, newer, previous, garden } = Astro.props;
 ---
 <Base title={post.data.title} description={post.data.summary}>
   <div class="post">
-    <PostAside post={post} older={older} headings={headings} garden={garden} />
+    <PostAside post={post} previous={previous} headings={headings} garden={garden} />
     <article>
       <Prompt path="~/pixelsprout/devlog" command={`cat ${slugOf(post)}.mdx`} />
       <header class="post-header">

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  assertPosts, commitUrl, formatDate, showDrafts, slugOf, tagOf, visiblePosts, type PostLike,
+  assertPosts, commitUrl, formatDate, previousPublished, showDrafts, slugOf, tagOf, visiblePosts, type PostLike,
 } from '../src/lib/post-meta';
 
 function post(id: string, date: string, extra: Partial<PostLike['data']> = {}): PostLike {
@@ -67,5 +67,21 @@ describe('assertPosts', () => {
     expect(() => assertPosts([post('rocco/a', '2026-09-28', { milestone: 9 })], [1, 2])).toThrow(
       'Post rocco/a names milestone 9, which dex does not have',
     );
+  });
+});
+
+describe('previousPublished', () => {
+  const posts = [
+    post('rocco/new', '2026-09-30'),
+    post('rocco/draft', '2026-09-29', { draft: true }),
+    post('rocco/old', '2026-09-28'),
+  ];
+
+  it('skips drafts to find the older published post', () => {
+    expect(previousPublished(posts, 0)?.id).toBe('rocco/old');
+  });
+
+  it('returns undefined for the oldest post', () => {
+    expect(previousPublished(posts, 2)).toBeUndefined();
   });
 });

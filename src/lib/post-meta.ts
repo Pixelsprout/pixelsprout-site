@@ -51,3 +51,8 @@ export function assertPosts(posts: PostLike[], milestoneNumbers: number[]): void
     }
   }
 }
+
+// The growth line compares against published posts only, so a preview shows what production will.
+export function previousPublished<T extends PostLike>(newestFirst: T[], index: number): T | undefined {
+  return newestFirst.slice(index + 1).find((p) => !p.data.draft);
+}
