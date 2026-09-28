@@ -97,4 +97,14 @@ describe('readDexSource', () => {
       origin: './x.jsonl',
     });
   });
+
+  it('gives up on a request that stalls', async () => {
+    const stalled: FetchLike = (url, init) =>
+      new Promise((_, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+      });
+    await expect(readDexSource({ fetch: stalled, timeoutMs: 20 })).rejects.toThrow(
+      `Fetching ${API} failed: timed out after 20ms`,
+    );
+  });
 });
