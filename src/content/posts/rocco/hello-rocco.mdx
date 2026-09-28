@@ -1,0 +1,88 @@
+---
+title: "Hello Rocco!"
+date: 2026-09-29
+summary: "Meet Rocco, a tiny 3D game engine where you write games in Roc and the engine runs on Odin."
+draft: false
+---
+
+Hello, and welcome to the very first post about Rocco!
+
+Rocco is a 3D game engine in very, very early development. The goal is a high-level, declarative interface for writing games, without giving up performance or robustness under the hood.
+
+Rocco games are written in [Roc](https://www.roc-lang.org/), "a fast, friendly, functional language", and the engine itself is written in [Odin](https://odin-lang.org/). That's where the name comes from: Rocco is sort of a mash-up of "Roc" and "Odin".
+
+## Why Odin?
+
+Odin is a perfect fit for the low-level systems of a game. It gives you manual memory management and lets you write your own custom allocators. The language is simple, like C, but it comes with some really nice extras, like a built-in [matrix type](https://odin-lang.org/docs/overview/#matrix-type) and an impressive set of vendored packages that are super handy for building games.
+
+## Why Roc?
+
+Writing a whole game in a systems language can get cumbersome, though, and that's where Roc comes in. Roc lets us build a _platform_ for our application. A platform is basically the interface your application builds on top of. That's what lets Roc adapt to pretty much any domain, and it's a perfect fit for sitting on top of an Odin game engine.
+
+## What a Rocco game looks like
+
+The API for a Rocco game is heavily inspired by [The Elm Architecture](https://guide.elm-lang.org/architecture/). You write three functions:
+
+```roc
+init : Config -> Model              # once, at startup
+step : Model, Input, F32 -> Model   # once per fixed step, 120 Hz
+view : Model -> Scene               # once per fixed step, after step
+```
+
+`init` configures your application and returns the model, which Odin then holds onto. `step` runs on every tick of the game's clock. This is where you update your model, and it's where most of your game logic lives. Finally, `view` runs after `step` and describes what to draw. You hand back a `Scene`, which is a list of meshes you'd like the engine to render, plus a camera to look through.
+
+Here's the `step` function from a little Pong game:
+
+```roc
+step : Model, Input, F32 -> Model
+step = |m, input, dt| {
+    next = game_state(m, input)
+    if next.state == Running {
+        next
+            |> move_paddles(input, dt)
+            |> move_ball(dt)
+            |> bounce_walls
+            |> hit_paddles
+            |> score_point
+    } else {
+        next
+    }
+}
+```
+
+Each tick, it works out the game state first. If the game is running, the model gets piped through each bit of logic in turn: move the paddles, move the ball, bounce off the walls, hit the paddles, score a point.
+
+And here's its `view` function:
+
+```roc
+view : Model -> Scene
+view = |m| {
+    c = m.cube
+    fixed = [
+        box(c, 10, { x: 0.0, y: -0.1, z: 0.0 }, { x: 2.0 * half_width, y: 0.1, z: 2.0 * half_depth }, { r: 0.1, g: 0.12, b: 0.15 }),
+        box(c, 11, { x: 0.0, y: 0.1, z: -half_depth - 0.15 }, { x: 2.0 * half_width, y: 0.3, z: 0.3 }, white),
+        box(c, 12, { x: 0.0, y: 0.1, z: half_depth + 0.15 }, { x: 2.0 * half_width, y: 0.3, z: 0.3 }, white),
+        box(c, 0, { x: -paddle_x, y: 0.2, z: m.left }, { x: 2.0 * paddle_half_thick, y: 0.4, z: 2.0 * paddle_half_len }, { r: 0.3, g: 0.7, b: 1.0 }),
+        box(c, 1, { x: paddle_x, y: 0.2, z: m.right }, { x: 2.0 * paddle_half_thick, y: 0.4, z: 2.0 * paddle_half_len }, { r: 1.0, g: 0.5, b: 0.3 }),
+        box(c, m.ball.id, { x: m.ball.x, y: 0.2, z: m.ball.z }, { x: 2.0 * ball_half, y: 2.0 * ball_half, z: 2.0 * ball_half }, white),
+    ]
+
+    draws = fixed
+        |> pips(c, m.score.left, 1000, -1.0, pip_tint(m.state, m.score.left, m.score.right))
+        |> pips(c, m.score.right, 2000, 1.0, pip_tint(m.state, m.score.right, m.score.left))
+
+    { camera: Cam.look_at({ x: 0.0, y: 14.0, z: 7.0 }, { x: 0.0, y: 0.0, z: 0.0 }), draws }
+}
+```
+
+The whole scene is just data: a list of boxes for the floor, walls, paddles and ball, a few score pips on top, and a camera looking down at the table.
+
+## Wrapping up
+
+A lot of Rocco has been built with the help of agentic tools, and honestly, they're incredibly empowering for a solo developer. You can build a whole piece of software on your own! The big catch I see is that, like any tool, you have to know how to use it well. And to do that, you still need to understand the thing you're pointing the tool at.
+
+One thing that's helped a lot here is using dex to track the work. Rocco's roadmap is split into milestones, and each milestone is broken down into smaller tasks. It all lives right in the repo, so both the agents and I can see what's done and what's next.
+
+I also wanted that progress to be visible here on the devlog, so the site reads the dex task log straight from the Rocco repo. Every time the log changes, the site rebuilds itself. See the little pixel plant? It grows a new leaf for each finished milestone, and a milestone that's still open grows a bit more with every task I tick off. Posts are tagged with the milestone they belong to as well, so you can follow along one milestone at a time.
+
+Thanks for reading, and here's to watching the plant grow! 🌱
