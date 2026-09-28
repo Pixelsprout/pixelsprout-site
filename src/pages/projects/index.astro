@@ -1,0 +1,35 @@
+---
+import Base from '../../layouts/Base.astro';
+import Prompt from '../../components/Prompt.astro';
+import { getGarden } from '../../lib/content';
+import { growthAt } from '../../lib/garden';
+
+const growth = growthAt(await getGarden(), new Date());
+---
+<Base title="projects" description="Projects growing at Pixelsprout.">
+  <section class="projects">
+    <Prompt command="ls projects" />
+    <a class="card pixel-frame" href="/projects/rocco/">
+      <span class="name">rocco</span>
+      <span class="desc">3D engine in Odin. Games in Roc. macOS, Linux, Windows.</span>
+      <span class="stage">stage {Math.floor(growth.total)}/{growth.slots.length} · growing</span>
+    </a>
+  </section>
+</Base>
+
+<style>
+  .projects { display: flex; flex-direction: column; gap: 20px; }
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 420px;
+    padding: 20px;
+    background: var(--soil-raised);
+    color: var(--text);
+  }
+  .card:hover { text-decoration: none; }
+  .name { font-family: var(--font-pixel); font-size: 22px; font-weight: 600; }
+  .desc { color: var(--text-muted); font-size: 15px; }
+  .stage { color: var(--sprout); font-size: 13px; }
+</style>

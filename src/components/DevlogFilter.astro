@@ -1,0 +1,16 @@
+---
+type Props = { numbers: number[]; current?: number };
+const { numbers, current } = Astro.props;
+---
+<nav class="filter" aria-label="Filter by milestone">
+  <a href="/devlog/" aria-current={current === undefined ? 'page' : undefined}>all</a>
+  {numbers.map((n) => (
+    <a href={`/devlog/m${n}/`} aria-current={current === n ? 'page' : undefined}>m{n}</a>
+  ))}
+</nav>
+
+<style>
+  .filter { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; }
+  .filter a { min-height: 44px; display: inline-flex; align-items: center; }
+  .filter a[aria-current='page'] { color: var(--clay); }
+</style>

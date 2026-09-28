@@ -1,0 +1,31 @@
+---
+import Base from '../../layouts/Base.astro';
+import GitLog from '../../components/GitLog.astro';
+import Prompt from '../../components/Prompt.astro';
+import StatusPanel from '../../components/StatusPanel.astro';
+import { getGarden, getPosts } from '../../lib/content';
+
+const [garden, posts] = await Promise.all([getGarden(), getPosts()]);
+const roccoPosts = posts.filter((p) => p.data.project === 'rocco');
+---
+<Base title="rocco" description="rocco: a 3D engine in Odin that runs games written in Roc. Roadmap and devlog.">
+  <section class="intro">
+    <Prompt command="cat projects/rocco/README" />
+    <h1>rocco</h1>
+    <p>
+      A 3D game engine in Odin that runs games written in Roc. Source on
+      <a href="https://github.com/Pixelsprout/rocco-engine">GitHub</a>.
+    </p>
+  </section>
+  <StatusPanel garden={garden} at={new Date()} detailed />
+  <section class="log">
+    <Prompt command="git log devlog --oneline -- rocco" />
+    <GitLog posts={roccoPosts} />
+  </section>
+</Base>
+
+<style>
+  .intro, .log { display: flex; flex-direction: column; gap: 12px; }
+  .intro h1 { font-size: 40px; }
+  .intro p { margin: 0; }
+</style>
