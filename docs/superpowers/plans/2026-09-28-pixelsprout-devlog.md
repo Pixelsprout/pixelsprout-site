@@ -1282,7 +1282,7 @@ export async function getPosts(): Promise<Post[]> {
 
 `test/fixtures/posts/rocco/published-post.mdx`:
 
-```mdx
+````mdx
 ---
 title: Published post title
 date: 2026-09-28
@@ -1301,7 +1301,7 @@ named : Config, Str -> U32
 ```
 
 <Check>a misspelt mesh name draws magenta and logs once.</Check>
-```
+````
 
 `test/fixtures/posts/rocco/draft-post.mdx`:
 
