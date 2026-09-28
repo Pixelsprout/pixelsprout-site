@@ -33,6 +33,14 @@ const pageTitle = title === 'pixelsprout' ? title : `${title} · pixelsprout`;
     <span id="copy-status" class="visually-hidden" aria-live="polite"></span>
     <script is:inline>
       const status = document.getElementById('copy-status');
+      let announce;
+      let reset;
+      const say = (message) => {
+        clearTimeout(announce);
+        if (!status) return;
+        status.textContent = '';
+        announce = setTimeout(() => { status.textContent = message; }, 50);
+      };
       document.querySelectorAll('.code').forEach((frame) => {
         const bar = frame.querySelector('.code-bar');
         const code = frame.querySelector('pre code');
@@ -41,17 +49,19 @@ const pageTitle = title === 'pixelsprout' ? title : `${title} · pixelsprout`;
         button.type = 'button';
         button.className = 'copy';
         button.textContent = 'copy';
-        let reset;
         button.addEventListener('click', async () => {
-          await navigator.clipboard.writeText(code.textContent || '');
           clearTimeout(reset);
-          button.textContent = 'copied';
-          if (status) {
-            status.textContent = '';
-            setTimeout(() => { status.textContent = 'Code copied to clipboard'; }, 50);
+          try {
+            await navigator.clipboard.writeText(code.textContent || '');
+            button.textContent = 'copied';
+            say('Code copied to clipboard');
+          } catch {
+            button.textContent = 'copy failed';
+            say('Copy failed');
           }
           reset = setTimeout(() => {
-            button.textContent = 'copy';
+            document.querySelectorAll('.copy').forEach((b) => { b.textContent = 'copy'; });
+            clearTimeout(announce);
             if (status) status.textContent = '';
           }, 1500);
         });
