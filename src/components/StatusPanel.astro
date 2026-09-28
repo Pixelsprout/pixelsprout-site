@@ -1,0 +1,82 @@
+---
+import Plant from './Plant.astro';
+import Prompt from './Prompt.astro';
+import type { GardenEntry } from '../lib/dex';
+import { entryStates, growthAt } from '../lib/garden';
+import { plantLabel } from '../lib/plant';
+
+type Props = { garden: GardenEntry[]; at: Date; detailed?: boolean };
+const { garden, at, detailed = false } = Astro.props;
+const growth = growthAt(garden, at);
+const states = entryStates(garden, at);
+const marks = { grown: '[x]', growing: '[~]', seed: '[ ]' } as const;
+---
+<section class="status pixel-frame">
+  <div class="planter">
+    <Plant
+      slots={growth.slots}
+      flowering={growth.flowering}
+      cell={12}
+      label={plantLabel('rocco', growth.total, growth.slots.length)}
+    />
+    <div class="soil-strip"></div>
+  </div>
+  <div class="report">
+    <Prompt command="rocco status --roadmap" />
+    <div class="stage">
+      <span class="stage-number">stage {Math.floor(growth.total)}/{growth.slots.length}</span>
+      <span class="hint">one leaf per milestone</span>
+    </div>
+    <ul class="checklist">
+      {garden.map((entry) => {
+        const state = states.get(entry.id) ?? 'seed';
+        return (
+          <li class={state}>
+            <div class="row">
+              <span>{marks[state]}</span>
+              <span>{entry.kind === 'milestone' ? `M${entry.number}` : 'side'}</span>
+              <span>{entry.title}</span>
+              <span class="state">{state}</span>
+            </div>
+            {detailed && entry.tasks.length > 0 && (
+              <ul class="tasks">
+                {entry.tasks.map((t) => <li class={t.completed ? 'done' : undefined}>{t.completed ? '[x]' : '[ ]'} {t.name}</li>)}
+              </ul>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .status {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 40px;
+    padding: 28px 32px 0;
+    background: var(--soil-raised);
+  }
+  .planter { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+  .report { display: flex; flex-direction: column; gap: 18px; padding-bottom: 28px; }
+  .stage { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
+  .stage-number { font-family: var(--font-pixel); font-size: 32px; font-weight: 600; color: var(--sprout); }
+  .hint { font-size: 14px; color: var(--text-muted); }
+  .checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+  .row { display: grid; grid-template-columns: 36px 44px minmax(0, 1fr) 72px; gap: 8px; }
+  .state { text-align: right; }
+  .grown { color: var(--sprout); }
+  .growing { color: var(--clay); }
+  .seed { color: var(--text-faint); }
+  .tasks { list-style: none; margin: 4px 0 8px 88px; padding: 0; font-size: 13px; color: var(--text-muted); }
+  .tasks .done { color: var(--text); }
+  @media (max-width: 720px) {
+    .status { grid-template-columns: 1fr; gap: 16px; padding: 18px 18px 0; }
+    .planter :global(svg) { width: 128px; height: 192px; }
+    .report { padding-bottom: 18px; }
+    .row { grid-template-columns: 36px 44px minmax(0, 1fr); }
+    .state { display: none; }
+    .tasks { margin-left: 0; }
+  }
+</style>

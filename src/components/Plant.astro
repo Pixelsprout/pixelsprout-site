@@ -1,0 +1,18 @@
+---
+import { PLANT_COLS, PLANT_ROWS, plantRects } from '../lib/plant';
+
+type Props = { slots: number[]; flowering: boolean; label: string; cell: number; class?: string };
+const { slots, flowering, label, cell, class: className } = Astro.props;
+const rects = plantRects(slots, flowering);
+---
+<svg
+  class:list={['plant', className]}
+  width={PLANT_COLS * cell}
+  height={PLANT_ROWS * cell}
+  viewBox={`0 0 ${PLANT_COLS} ${PLANT_ROWS}`}
+  shape-rendering="crispEdges"
+  role="img"
+  aria-label={label}
+>
+  {rects.map((r) => <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={r.fill} />)}
+</svg>

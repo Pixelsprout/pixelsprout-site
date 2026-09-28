@@ -1,4 +1,44 @@
 ---
 import Base from '../layouts/Base.astro';
+import GitLog from '../components/GitLog.astro';
+import Prompt from '../components/Prompt.astro';
+import StatusPanel from '../components/StatusPanel.astro';
+import { getGarden, getPosts } from '../lib/content';
+import { slugOf } from '../lib/post-meta';
+
+const [garden, posts] = await Promise.all([getGarden(), getPosts()]);
+const latest = posts[0];
 ---
-<Base title="pixelsprout"><p>soil ready</p></Base>
+<Base title="pixelsprout">
+  <section class="about">
+    <Prompt command="cat about.txt" />
+    <p>
+      Building <a href="/projects/rocco/">rocco</a>: a 3D engine in Odin that runs games written in Roc.
+      Odin owns the systems. Roc owns the game.
+    </p>
+  </section>
+
+  <StatusPanel garden={garden} at={new Date()} />
+
+  <section class="log">
+    <Prompt command="git log devlog --oneline" />
+    <GitLog posts={posts.slice(0, 5)} />
+    {posts.length > 5 && <a class="more" href="/devlog/">all posts →</a>}
+  </section>
+
+  {latest && (
+    <section class="latest">
+      <h2>Latest: {latest.data.title}</h2>
+      <p>{latest.data.summary}</p>
+      <a href={`/devlog/${slugOf(latest)}/`}>read the post →</a>
+    </section>
+  )}
+</Base>
+
+<style>
+  .about, .log, .latest { display: flex; flex-direction: column; gap: 12px; }
+  .about p { margin: 0; font-size: 19px; }
+  .latest h2 { font-size: 24px; }
+  .latest p { margin: 0; color: var(--text-muted); }
+  .more { font-size: 14px; }
+</style>

@@ -1,0 +1,49 @@
+---
+import type { Post } from '../lib/content';
+import { formatDate, slugOf, tagOf } from '../lib/post-meta';
+
+type Props = { posts: Post[] };
+const { posts } = Astro.props;
+---
+{posts.length === 0 ? (
+  <p class="empty">nothing published yet</p>
+) : (
+  <ol class="log">
+    {posts.map((post) => (
+      <li>
+        <a href={`/devlog/${slugOf(post)}/`}>
+          <span class="hash">{post.data.commits[0]?.slice(0, 7) ?? ''}</span>
+          <span class="date">{formatDate(post.data.date)}</span>
+          <span class="title">
+            {post.data.title}
+            {post.data.draft && <span class="draft"> [draft]</span>}
+          </span>
+          <span class="tag">({tagOf(post)})</span>
+        </a>
+      </li>
+    ))}
+  </ol>
+)}
+
+<style>
+  .log { list-style: none; margin: 0; padding: 0; }
+  .log a {
+    display: grid;
+    grid-template-columns: 90px 110px minmax(0, 1fr) 90px;
+    gap: 16px;
+    align-items: baseline;
+    padding: 10px 12px;
+    color: var(--text);
+  }
+  .log a:hover { background: var(--soil-raised); text-decoration: none; }
+  .hash { color: var(--clay); font-size: 14px; }
+  .date { color: var(--text-muted); font-size: 13px; }
+  .tag { color: var(--sprout); font-size: 12px; text-align: right; }
+  .draft { color: var(--clay); font-size: 12px; }
+  .empty { margin: 0; color: var(--text-faint); }
+  @media (max-width: 720px) {
+    .log a { grid-template-columns: auto auto 1fr; gap: 4px 10px; padding: 14px 0; border-bottom: 1px solid var(--edge); }
+    .title { grid-column: 1 / -1; grid-row: 2; font-size: 16px; }
+    .tag { text-align: left; }
+  }
+</style>
