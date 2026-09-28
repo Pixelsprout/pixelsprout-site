@@ -48,6 +48,10 @@ const everything = outputFiles('dist')
 check(!everything.includes('Draft post title'), 'a draft title appears in the production output');
 check(read('rss.xml').includes('Published post title'), 'rss.xml lacks the published post');
 check(read('index.html').includes('stage 3/7'), 'the homepage does not show stage 3/7');
+for (const page of ['index.html', 'devlog/index.html', 'projects/index.html', 'projects/rocco/index.html', 'devlog/published-post/index.html']) {
+  check((read(page).match(/<h1[\s>]/g) ?? []).length === 1, `dist/${page} does not have exactly one <h1>`);
+}
+check(/<span[^>]*id="copy-status"[^>]*aria-live="polite"|<span[^>]*aria-live="polite"[^>]*id="copy-status"/.test(read('devlog/published-post/index.html')), 'the post page lacks the copy-status live region');
 
 build({ POSTS_DIR: 'test/fixtures/empty-posts' });
 

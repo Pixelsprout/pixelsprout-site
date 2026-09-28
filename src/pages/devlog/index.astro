@@ -10,6 +10,7 @@ const numbers = garden.filter((g) => g.kind === 'milestone').map((g) => g.number
 ---
 <Base title="devlog" description="Every rocco devlog post, newest first.">
   <section class="devlog">
+    <h1 class="visually-hidden">Devlog</h1>
     <Prompt command="git log devlog --oneline" />
     <DevlogFilter numbers={numbers} />
     <GitLog posts={posts} />

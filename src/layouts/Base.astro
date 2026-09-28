@@ -30,7 +30,9 @@ const pageTitle = title === 'pixelsprout' ? title : `${title} · pixelsprout`;
       <main><slot /></main>
       <SiteFooter />
     </div>
+    <span id="copy-status" class="visually-hidden" aria-live="polite"></span>
     <script is:inline>
+      const status = document.getElementById('copy-status');
       document.querySelectorAll('.code').forEach((frame) => {
         const bar = frame.querySelector('.code-bar');
         const code = frame.querySelector('pre code');
@@ -42,7 +44,11 @@ const pageTitle = title === 'pixelsprout' ? title : `${title} · pixelsprout`;
         button.addEventListener('click', async () => {
           await navigator.clipboard.writeText(code.textContent || '');
           button.textContent = 'copied';
-          setTimeout(() => { button.textContent = 'copy'; }, 1500);
+          if (status) status.textContent = 'Code copied to clipboard';
+          setTimeout(() => {
+            button.textContent = 'copy';
+            if (status) status.textContent = '';
+          }, 1500);
         });
         bar.append(button);
       });

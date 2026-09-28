@@ -10,6 +10,7 @@ const [garden, posts] = await Promise.all([getGarden(), getPosts()]);
 const latest = posts[0];
 ---
 <Base title="pixelsprout">
+  <h1 class="visually-hidden">pixelsprout devlog</h1>
   <section class="about">
     <Prompt command="cat about.txt" />
     <p>
