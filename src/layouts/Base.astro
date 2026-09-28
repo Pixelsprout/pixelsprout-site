@@ -41,11 +41,16 @@ const pageTitle = title === 'pixelsprout' ? title : `${title} · pixelsprout`;
         button.type = 'button';
         button.className = 'copy';
         button.textContent = 'copy';
+        let reset;
         button.addEventListener('click', async () => {
           await navigator.clipboard.writeText(code.textContent || '');
+          clearTimeout(reset);
           button.textContent = 'copied';
-          if (status) status.textContent = 'Code copied to clipboard';
-          setTimeout(() => {
+          if (status) {
+            status.textContent = '';
+            setTimeout(() => { status.textContent = 'Code copied to clipboard'; }, 50);
+          }
+          reset = setTimeout(() => {
             button.textContent = 'copy';
             if (status) status.textContent = '';
           }, 1500);

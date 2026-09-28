@@ -78,7 +78,7 @@ describe('previousPublished', () => {
   ];
 
   it('skips drafts to find the older published post', () => {
-    expect(previousPublished(posts, 0)?.id).toBe('rocco/old');
+    expect(previousPublished(posts, 0)).toEqual(posts[2]);
   });
 
   it('returns undefined for the oldest post', () => {

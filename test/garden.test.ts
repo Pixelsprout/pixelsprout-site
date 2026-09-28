@@ -86,7 +86,7 @@ describe('undated completions', () => {
 
   it('counts a completed milestone with no completion date as grown', () => {
     const m: GardenEntry = { id: 'm1', kind: 'milestone', number: 1, title: 't', completed: true, completedAt: null, tasks: [] };
-    expect(growthAt([m], at).slots).toEqual([1]);
+    expect(growthAt([m], at)).toEqual({ total: 1, slots: [1], flowering: true });
   });
 
   it('counts a completed task with no completion date as done', () => {
@@ -94,7 +94,7 @@ describe('undated completions', () => {
       id: 'm1', kind: 'milestone', number: 1, title: 't', completed: false, completedAt: null,
       tasks: [{ name: 'a', completed: true, completedAt: null }, { name: 'b', completed: false, completedAt: null }],
     };
-    expect(growthAt([m], at).slots).toEqual([0.5]);
+    expect(growthAt([m], at)).toEqual({ total: 0.5, slots: [0.5], flowering: false });
   });
 });
 

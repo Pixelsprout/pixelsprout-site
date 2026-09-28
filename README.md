@@ -14,7 +14,7 @@ the [rocco](https://github.com/Pixelsprout/rocco-engine) dex task log.
 | `pnpm test` | Run the unit tests |
 | `pnpm check` | Type-check the site and the content schemas |
 | `pnpm smoke` | Build twice against the fixtures and check the output |
-| `pnpm ci` | Run test, check and smoke. CI runs this with `DEX_SOURCE=test/fixtures/tasks.jsonl`. |
+| `pnpm run ci` | Run test, check and smoke. CI runs this with `DEX_SOURCE=test/fixtures/tasks.jsonl`. Plain `pnpm ci` is pnpm's clean install, not this script. |
 
 ## Writing a post
 
