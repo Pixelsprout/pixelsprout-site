@@ -1,0 +1,54 @@
+---
+import type { MarkdownHeading } from 'astro';
+import Plant from './Plant.astro';
+import type { Post } from '../lib/content';
+import type { GardenEntry } from '../lib/dex';
+import { endOfUtcDay, growthAt, growthLine } from '../lib/garden';
+import { plantLabel } from '../lib/plant';
+import { commitUrl } from '../lib/post-meta';
+
+type Props = { post: Post; older?: Post; headings: MarkdownHeading[]; garden: GardenEntry[] };
+const { post, older, headings, garden } = Astro.props;
+const showPlant = post.data.project === 'rocco';
+const growth = growthAt(garden, endOfUtcDay(post.data.date));
+const previous = older ? growthAt(garden, endOfUtcDay(older.data.date)).total : 0;
+const sections = headings.filter((h) => h.depth === 2);
+---
+<aside class="aside">
+  {showPlant && (
+    <div class="planter">
+      <div class="pot pixel-frame">
+        <Plant
+          slots={growth.slots}
+          flowering={growth.flowering}
+          cell={6}
+          label={plantLabel('rocco', growth.total, growth.slots.length)}
+        />
+        <div class="soil-strip"></div>
+      </div>
+      <p class="growth">{growthLine(previous, growth.total)}</p>
+    </div>
+  )}
+  {post.data.commits.length > 0 && (
+    <div class="group">
+      <span class="heading">commits</span>
+      {post.data.commits.map((hash) => <a class="hash" href={commitUrl(hash)}>{hash.slice(0, 7)}</a>)}
+    </div>
+  )}
+  {sections.length > 0 && (
+    <nav class="group" aria-label="On this page">
+      <span class="heading">on this page</span>
+      {sections.map((h) => <a href={`#${h.slug}`}>{h.text}</a>)}
+    </nav>
+  )}
+</aside>
+
+<style>
+  .aside { display: flex; flex-direction: column; gap: 28px; font-size: 13px; color: var(--text-muted); }
+  .planter { display: flex; flex-direction: column; gap: 12px; }
+  .pot { display: flex; flex-direction: column; align-items: center; padding: 20px 20px 0; background: var(--soil-raised); }
+  .growth { margin: 0; text-align: center; color: var(--sprout); }
+  .group { display: flex; flex-direction: column; gap: 6px; }
+  .heading { color: var(--text); }
+  .hash { color: var(--clay); }
+</style>
