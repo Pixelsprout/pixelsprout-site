@@ -191,13 +191,14 @@ Every error fails the build. Vercel keeps the last good deployment live.
 ### 5.2 Plant (`lib/plant.ts`, `Plant.astro`)
 
 - `plantRects(growth)` returns pixel rectangles on a 16 × 24 grid. Port the logic from the canvas `Plant.dc.html`.
-- There are 7 leaf slots, one per milestone. For slot k, let f be that milestone's count:
+- Milestones 1 to 6 are leaf slots. For slot k, let f be that milestone's count:
   - f = 1: full leaf.
   - 0.5 ≤ f < 1: half leaf.
   - 0 < f < 0.5: 1-pixel bud.
   - f = 0: nothing.
-- The stem height follows the number of slots with f > 0.
-- Growth 7 replaces the tip with a flower.
+- Milestone 7 is the tip. While it is partial, the tip is a clay bud. When every milestone is complete, the tip is a flower.
+- The stem height follows the last slot with f > 0.
+- An open milestone counts at most 0.9, so it never draws as a full leaf.
 - `Plant.astro` renders inline SVG with `shape-rendering="crispEdges"`, `role="img"`
   and `aria-label="rocco plant, stage <growth to one decimal> of 7"`.
 - The `cell` prop sets the pixel size: 12 on the homepage, 8 below 720px, 6 in `PostAside`.
