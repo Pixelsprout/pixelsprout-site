@@ -10,7 +10,8 @@ export function endOfUtcDay(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
 }
 
-const doneBy = (completedAt: Date | null, at: Date) => completedAt !== null && completedAt.getTime() <= at.getTime();
+// dex can mark work complete without a date. Count it as done on every date.
+const doneBy = (completedAt: Date | null, at: Date) => completedAt === null || completedAt.getTime() <= at.getTime();
 
 export function entryShare(entry: GardenEntry, at: Date): number {
   if (entry.completed && doneBy(entry.completedAt, at)) return 1;
@@ -23,6 +24,11 @@ export function growthAt(garden: GardenEntry[], at: Date): Growth {
   const slots = garden.filter((e) => e.kind === 'milestone').map((e) => entryShare(e, at));
   const total = slots.reduce((sum, share) => sum + share, 0);
   return { total, slots, flowering: slots.length > 0 && slots.every((s) => s === 1) };
+}
+
+export function growthStatus(growth: Growth): 'seed' | 'growing' | 'flowering' {
+  if (growth.flowering) return 'flowering';
+  return growth.total > 0 ? 'growing' : 'seed';
 }
 
 export function entryStates(garden: GardenEntry[], at: Date): Map<string, EntryState> {

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseDex, type GardenEntry } from '../src/lib/dex';
-import { endOfUtcDay, entryStates, growthAt, growthLine, OPEN_MILESTONE_CAP } from '../src/lib/garden';
+import { endOfUtcDay, entryStates, growthAt, growthLine, growthStatus, OPEN_MILESTONE_CAP } from '../src/lib/garden';
 
 const garden = parseDex(readFileSync(new URL('./fixtures/tasks.jsonl', import.meta.url), 'utf8'));
 const day = (iso: string) => endOfUtcDay(new Date(iso));
@@ -78,5 +78,30 @@ describe('growthLine', () => {
     expect(growthLine(3, 3.5)).toBe('rocco at stage 3');
     expect(growthLine(3, 3)).toBe('rocco at stage 3');
     expect(growthLine(0, 0.9)).toBe('rocco at stage 0');
+  });
+});
+
+describe('undated completions', () => {
+  const at = day('2026-09-28');
+
+  it('counts a completed milestone with no completion date as grown', () => {
+    const m: GardenEntry = { id: 'm1', kind: 'milestone', number: 1, title: 't', completed: true, completedAt: null, tasks: [] };
+    expect(growthAt([m], at).slots).toEqual([1]);
+  });
+
+  it('counts a completed task with no completion date as done', () => {
+    const m: GardenEntry = {
+      id: 'm1', kind: 'milestone', number: 1, title: 't', completed: false, completedAt: null,
+      tasks: [{ name: 'a', completed: true, completedAt: null }, { name: 'b', completed: false, completedAt: null }],
+    };
+    expect(growthAt([m], at).slots).toEqual([0.5]);
+  });
+});
+
+describe('growthStatus', () => {
+  it('names seed, growing and flowering', () => {
+    expect(growthStatus({ total: 0, slots: [0, 0], flowering: false })).toBe('seed');
+    expect(growthStatus({ total: 1.5, slots: [1, 0.5], flowering: false })).toBe('growing');
+    expect(growthStatus({ total: 2, slots: [1, 1], flowering: true })).toBe('flowering');
   });
 });

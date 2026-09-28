@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Prompt from '../../components/Prompt.astro';
 import { getGarden } from '../../lib/content';
-import { growthAt } from '../../lib/garden';
+import { growthAt, growthStatus } from '../../lib/garden';
 
 const growth = growthAt(await getGarden(), new Date());
 ---
@@ -12,7 +12,7 @@ const growth = growthAt(await getGarden(), new Date());
     <a class="card pixel-frame" href="/projects/rocco/">
       <span class="name">rocco</span>
       <span class="desc">3D engine in Odin. Games in Roc. macOS, Linux, Windows.</span>
-      <span class="stage">stage {Math.floor(growth.total)}/{growth.slots.length} · growing</span>
+      <span class="stage">stage {Math.floor(growth.total)}/{growth.slots.length} · {growthStatus(growth)}</span>
     </a>
   </section>
 </Base>
