@@ -1288,7 +1288,7 @@ title: Published post title
 date: 2026-09-28
 summary: A published fixture post.
 milestone: 3
-commits: [9039d52, 14b10ee]
+commits: ["9039d52", "14b10ee"]
 ---
 
 ## First section
@@ -2654,7 +2654,7 @@ for (const [slug, title, date, milestone, commits, angle] of stubs) {
     `date: ${date}`,
     'summary: "[write this: one sentence for lists and RSS]"',
     ...(milestone ? [`milestone: ${milestone}`] : []),
-    ...(commits.length ? [`commits: [${commits.join(', ')}]`] : []),
+    ...(commits.length ? [`commits: [${commits.map((c) => JSON.stringify(c)).join(', ')}]`] : []),
     'draft: true',
     '---',
   ];

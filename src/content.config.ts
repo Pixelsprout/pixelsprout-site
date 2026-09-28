@@ -11,7 +11,10 @@ const posts = defineCollection({
     summary: z.string(),
     project: z.string().default('rocco'),
     milestone: z.number().int().min(1).optional(),
-    commits: z.array(z.string().regex(/^[0-9a-f]{7,40}$/)).default([]),
+    // YAML reads an unquoted hash like 56166e1 as a number, so hashes must be quoted.
+    commits: z
+      .array(z.string({ error: 'Quote each commit hash, for example commits: ["56166e1"]' }).regex(/^[0-9a-f]{7,40}$/))
+      .default([]),
     draft: z.boolean().default(false),
   }),
 });
