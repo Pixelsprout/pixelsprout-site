@@ -25,7 +25,7 @@ the [rocco](https://github.com/Pixelsprout/rocco-engine) dex task log.
    title: Mesh handles and a magenta fallback
    date: 2026-09-28
    summary: One sentence for lists and RSS.
-   milestone: 3                    # optional, a dex milestone number
+   type: deep-dive                 # announcement, walkthrough, deep-dive or notes
    commits: ["9039d52", "14b10ee"] # optional; quote each hash
    draft: true                     # remove to publish
    ```

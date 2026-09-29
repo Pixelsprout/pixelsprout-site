@@ -13,7 +13,7 @@ export async function getGarden(): Promise<GardenEntry[]> {
 }
 
 export async function getPosts(): Promise<Post[]> {
-  const [all, garden] = await Promise.all([getCollection('posts'), getGarden()]);
-  assertPosts(all, garden.filter((g) => g.kind === 'milestone').map((g) => g.number!));
+  const all = await getCollection('posts');
+  assertPosts(all);
   return visiblePosts(all, showDrafts({ dev: import.meta.env.DEV, vercelEnv: process.env.VERCEL_ENV }));
 }

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  assertPosts, commitUrl, formatDate, previousPublished, showDrafts, slugOf, tagOf, visiblePosts, type PostLike,
+  assertPosts, commitUrl, formatDate, POST_TYPES, previousPublished, showDrafts, slugOf, tagOf, visiblePosts, type PostLike,
 } from '../src/lib/post-meta';
 
 function post(id: string, date: string, extra: Partial<PostLike['data']> = {}): PostLike {
-  return { id, data: { title: id, date: new Date(date), summary: 's', project: 'rocco', commits: [], draft: false, ...extra } };
+  return { id, data: { title: id, date: new Date(date), summary: 's', project: 'rocco', type: 'notes', commits: [], draft: false, ...extra } };
 }
 
 describe('showDrafts', () => {
@@ -21,9 +21,14 @@ describe('slugs, tags and links', () => {
     expect(slugOf(post('rocco/mesh-handles', '2026-09-28'))).toBe('mesh-handles');
   });
 
-  it('tags a post by milestone, else notes', () => {
-    expect(tagOf(post('a', '2026-09-28', { milestone: 3 }))).toBe('m3');
-    expect(tagOf(post('a', '2026-09-28'))).toBe('notes');
+  it('tags a post with the label of its type', () => {
+    expect(tagOf(post('a', '2026-09-28', { type: 'deep-dive' }))).toBe('deep dive');
+    expect(tagOf(post('a', '2026-09-28', { type: 'walkthrough' }))).toBe('walkthrough');
+  });
+
+  it('gives every type a unique slug and label', () => {
+    expect(POST_TYPES.map((t) => t.slug)).toEqual(['announcement', 'walkthrough', 'deep-dive', 'notes']);
+    expect(new Set(POST_TYPES.map((t) => t.label)).size).toBe(POST_TYPES.length);
   });
 
   it('links a commit on GitHub', () => {
@@ -53,19 +58,13 @@ describe('visiblePosts', () => {
 });
 
 describe('assertPosts', () => {
-  it('accepts posts with known milestones and unique slugs', () => {
-    expect(() => assertPosts([post('rocco/a', '2026-09-28', { milestone: 3 }), post('rocco/b', '2026-09-28')], [1, 2, 3])).not.toThrow();
+  it('accepts posts with unique slugs', () => {
+    expect(() => assertPosts([post('rocco/a', '2026-09-28'), post('rocco/b', '2026-09-28')])).not.toThrow();
   });
 
   it('names both files when two posts share a slug', () => {
-    expect(() => assertPosts([post('rocco/intro', '2026-09-28'), post('other/intro', '2026-09-28')], [1])).toThrow(
+    expect(() => assertPosts([post('rocco/intro', '2026-09-28'), post('other/intro', '2026-09-28')])).toThrow(
       'Posts rocco/intro and other/intro share the slug "intro"',
-    );
-  });
-
-  it('names a milestone that dex does not have', () => {
-    expect(() => assertPosts([post('rocco/a', '2026-09-28', { milestone: 9 })], [1, 2])).toThrow(
-      'Post rocco/a names milestone 9, which dex does not have',
     );
   });
 });

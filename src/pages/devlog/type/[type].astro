@@ -1,0 +1,28 @@
+---
+import Base from '../../../layouts/Base.astro';
+import DevlogFilter from '../../../components/DevlogFilter.astro';
+import GitLog from '../../../components/GitLog.astro';
+import Prompt from '../../../components/Prompt.astro';
+import { getPosts } from '../../../lib/content';
+import { POST_TYPES } from '../../../lib/post-meta';
+
+export function getStaticPaths() {
+  return POST_TYPES.map((t) => ({ params: { type: t.slug }, props: { type: t } }));
+}
+
+const { type } = Astro.props;
+const posts = (await getPosts()).filter((p) => p.data.type === type.slug);
+---
+<Base title={type.label} description={`Devlog posts of type ${type.label}.`}>
+  <section class="devlog">
+    <Prompt command={`git log devlog --grep ${type.slug}`} />
+    <h1>{type.label}</h1>
+    <DevlogFilter current={type.slug} />
+    <GitLog posts={posts} />
+  </section>
+</Base>
+
+<style>
+  .devlog { display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-size: 32px; }
+</style>

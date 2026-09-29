@@ -2,6 +2,7 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { dexLoader } from './loaders/dex';
+import { POST_TYPE_SLUGS } from './lib/post-meta';
 
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: process.env.POSTS_DIR ?? './src/content/posts' }),
@@ -10,7 +11,7 @@ const posts = defineCollection({
     date: z.coerce.date(),
     summary: z.string(),
     project: z.string().default('rocco'),
-    milestone: z.number().int().min(1).optional(),
+    type: z.enum(POST_TYPE_SLUGS),
     // YAML reads an unquoted hash like 56166e1 as a number, so hashes must be quoted.
     commits: z
       .array(z.string({ error: 'Quote each commit hash, for example commits: ["56166e1"]' }).regex(/^[0-9a-f]{7,40}$/))

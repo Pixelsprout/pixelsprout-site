@@ -31,7 +31,8 @@ for (const path of [
   'index.html',
   'devlog/index.html',
   'devlog/published-post/index.html',
-  'devlog/m3/index.html',
+  'devlog/type/deep-dive/index.html',
+  'devlog/type/announcement/index.html',
   'projects/index.html',
   'projects/rocco/index.html',
   'rss.xml',
@@ -47,6 +48,8 @@ const everything = outputFiles('dist')
   .join('\n');
 check(!everything.includes('Draft post title'), 'a draft title appears in the production output');
 check(read('rss.xml').includes('Published post title'), 'rss.xml lacks the published post');
+check(read('devlog/type/deep-dive/index.html').includes('Published post title'), '/devlog/type/deep-dive/ lacks the deep dive post');
+check(read('devlog/type/announcement/index.html').includes('nothing published yet'), 'an empty type page lacks the empty state');
 check(read('index.html').includes('stage 3/7'), 'the homepage does not show stage 3/7');
 for (const page of ['index.html', 'devlog/index.html', 'projects/index.html', 'projects/rocco/index.html', 'devlog/published-post/index.html']) {
   check((read(page).match(/<h1[\s>]/g) ?? []).length === 1, `dist/${page} does not have exactly one <h1>`);

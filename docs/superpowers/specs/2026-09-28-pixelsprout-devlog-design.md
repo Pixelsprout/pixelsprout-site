@@ -28,7 +28,7 @@ rocco is a 3D game engine in Odin that runs games written in Roc
 | Domain | `pixelsprout.dev` on Cloudflare DNS; `www` redirects to the apex |
 | Theme | Dark only |
 
-Out of scope: comments, search, tag pages beyond the milestone filter,
+Out of scope: comments, search, tag pages beyond the post type filter,
 analytics, a theme toggle, i18n, drawing side shoots on the plant.
 
 ## 3. Structure
@@ -58,8 +58,8 @@ test/fixtures/tasks.jsonl  # trimmed dex fixture
 | Route | Contents |
 |---|---|
 | `/` | `about.txt` intro, rocco status panel with the plant, 5 newest posts, summary of the newest post |
-| `/devlog/` | All posts, newest first, git-log style, with milestone filter links |
-| `/devlog/m<N>/` | Static filter page: posts for milestone N |
+| `/devlog/` | All posts, newest first, git-log style, with post type filter links |
+| `/devlog/type/<type>/` | Static filter page: posts of one type. Every type has a page, even with no posts |
 | `/devlog/<slug>/` | Post page |
 | `/projects/` | One card per project |
 | `/projects/rocco/` | Full milestone and subtask checklist with the large plant |
@@ -74,16 +74,17 @@ title: Mesh handles and the manifest
 date: 2026-09-28
 summary: One sentence for lists and RSS.
 project: rocco                 # default: rocco
-milestone: 3                   # optional, 1–7
+type: deep-dive                # announcement, walkthrough, deep-dive or notes
 commits: [9039d52, 14b10ee]    # optional
 draft: true                    # optional, default false
 ```
 
-- The build fails if `milestone` does not name a dex milestone.
+- `type` is required. The build fails if it is missing or not one of the four types.
+- `POST_TYPES` in `src/lib/post-meta.ts` is the one list of types. The schema, the filter and the type pages read it.
+- Posts do not name a dex milestone. A post can cover work outside the milestones, or outside rocco.
 - Each commit links to `https://github.com/Pixelsprout/rocco-engine/commit/<hash>`.
 - The `GitLog` hash column shows the first commit, or stays blank.
-- The post tag is `m<N>` when `milestone` is set. Else the tag is `notes`.
-  Stubs in the "—" and "side" rows of 3.4 have no `milestone`, so they show `notes`.
+- The post tag is the label of its type, for example `deep dive`.
 
 ### 3.3 Drafts
 
@@ -97,6 +98,8 @@ draft: true                    # optional, default false
 
 Create one draft stub per idea below. Each stub has real frontmatter and
 `[write this]` section headings. Do not write post prose.
+
+The stubs were first grouped by milestone. Posts now carry a type instead.
 
 | Milestone | Stubs |
 |---|---|

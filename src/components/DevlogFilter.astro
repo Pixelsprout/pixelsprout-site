@@ -1,11 +1,13 @@
 ---
-type Props = { numbers: number[]; current?: number };
-const { numbers, current } = Astro.props;
+import { POST_TYPES, type PostType } from '../lib/post-meta';
+
+type Props = { current?: PostType };
+const { current } = Astro.props;
 ---
-<nav class="filter" aria-label="Filter by milestone">
+<nav class="filter" aria-label="Filter by post type">
   <a href="/devlog/" aria-current={current === undefined ? 'page' : undefined}>all</a>
-  {numbers.map((n) => (
-    <a href={`/devlog/m${n}/`} aria-current={current === n ? 'page' : undefined}>m{n}</a>
+  {POST_TYPES.map((t) => (
+    <a href={`/devlog/type/${t.slug}/`} aria-current={current === t.slug ? 'page' : undefined}>{t.label}</a>
   ))}
 </nav>
 

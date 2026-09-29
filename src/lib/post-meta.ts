@@ -1,9 +1,20 @@
+export const POST_TYPES = [
+  { slug: 'announcement', label: 'announcement' },
+  { slug: 'walkthrough', label: 'walkthrough' },
+  { slug: 'deep-dive', label: 'deep dive' },
+  { slug: 'notes', label: 'notes' },
+] as const;
+
+export type PostType = (typeof POST_TYPES)[number]['slug'];
+
+export const POST_TYPE_SLUGS = POST_TYPES.map((t) => t.slug) as [PostType, ...PostType[]];
+
 export type PostData = {
   title: string;
   date: Date;
   summary: string;
   project: string;
-  milestone?: number;
+  type: PostType;
   commits: string[];
   draft: boolean;
 };
@@ -20,8 +31,12 @@ export function slugOf(post: PostLike): string {
   return post.id.split('/').pop()!;
 }
 
+export function typeLabel(type: PostType): string {
+  return POST_TYPES.find((t) => t.slug === type)!.label;
+}
+
 export function tagOf(post: PostLike): string {
-  return post.data.milestone ? `m${post.data.milestone}` : 'notes';
+  return typeLabel(post.data.type);
 }
 
 export function commitUrl(hash: string): string {
@@ -38,17 +53,13 @@ export function visiblePosts<T extends PostLike>(posts: T[], drafts: boolean): T
     .sort((a, b) => b.data.date.getTime() - a.data.date.getTime() || a.id.localeCompare(b.id));
 }
 
-export function assertPosts(posts: PostLike[], milestoneNumbers: number[]): void {
+export function assertPosts(posts: PostLike[]): void {
   const seen = new Map<string, string>();
   for (const post of posts) {
     const slug = slugOf(post);
     const other = seen.get(slug);
     if (other) throw new Error(`Posts ${other} and ${post.id} share the slug "${slug}"`);
     seen.set(slug, post.id);
-    const { milestone } = post.data;
-    if (milestone !== undefined && !milestoneNumbers.includes(milestone)) {
-      throw new Error(`Post ${post.id} names milestone ${milestone}, which dex does not have`);
-    }
   }
 }
 

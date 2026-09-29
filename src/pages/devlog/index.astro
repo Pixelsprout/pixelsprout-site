@@ -3,16 +3,15 @@ import Base from '../../layouts/Base.astro';
 import DevlogFilter from '../../components/DevlogFilter.astro';
 import GitLog from '../../components/GitLog.astro';
 import Prompt from '../../components/Prompt.astro';
-import { getGarden, getPosts } from '../../lib/content';
+import { getPosts } from '../../lib/content';
 
-const [garden, posts] = await Promise.all([getGarden(), getPosts()]);
-const numbers = garden.filter((g) => g.kind === 'milestone').map((g) => g.number!);
+const posts = await getPosts();
 ---
 <Base title="devlog" description="Every rocco devlog post, newest first.">
   <section class="devlog">
     <h1 class="visually-hidden">Devlog</h1>
     <Prompt command="git log devlog --oneline" />
-    <DevlogFilter numbers={numbers} />
+    <DevlogFilter />
     <GitLog posts={posts} />
   </section>
 </Base>
