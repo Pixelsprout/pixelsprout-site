@@ -1,0 +1,272 @@
+---
+title: "Walking through the entity game"
+date: 2026-09-30
+summary: "A tour of a small Rocco game: a sprout that walks around, collects pickups and opens a door, all in pure Roc."
+milestone: 4
+draft: true
+---
+
+In the [first post](/devlog/hello-rocco/) I showed you the three functions every Rocco game is built from. This time, let's walk through a real (if very small) game from top to bottom: the entity game.
+
+You play as a little sprout. There's a ring of green spheres on the floor, and a purple door off in the distance. Walk into all the spheres and the door lifts open. That's it! But it's enough to touch pretty much every part of the engine.
+
+<Figure src="/devlog/entity-game/sprout.png" pixelated={false} alt="The sprout, a smiling orange plant pot with two leaves, standing among green sphere pickups with a purple door behind it" caption="Our little sprout, out collecting pickups." />
+
+## Loading a real model
+
+The big new thing here is that Rocco can now load actual models, not just primitive meshes. Our player is a `sprout.glb` file sitting in the game's `assets/meshes/` folder, and getting hold of it looks like this:
+
+```roc
+resolve_meshes : Config -> MeshIds
+resolve_meshes = |config| {
+	cube: Mesh.primitive(config, Cube),
+	sphere: Mesh.primitive(config, Sphere),
+	plane: Mesh.primitive(config, Plane),
+	sprout: Mesh.resolve(config, "sprout"),
+}
+```
+
+`Mesh.resolve` takes the config and a name. The name is the file's stem, so `"sprout"` points at `assets/meshes/sprout.glb`. When the engine starts up, it loads everything in that folder into its mesh table and hands the game a manifest of names and ids. `resolve` just looks the name up and gives you back the id.
+
+And if you typo the name? You get id `0`, which is the engine's bright magenta fallback mesh, and the name gets printed so you know what went wrong.
+
+## init: setting up the model
+
+Remember, a Rocco game has three functions: `init`, `step` and `view`. `init` takes a `Config` and returns your `Model`.
+
+`Config` is part of the platform's vocabulary, which is the language the game and the engine use to talk to each other. It only has two things in it right now:
+
+```roc
+Config : { seed : U64, meshes : List({ name : Str, id : U32 }) }
+```
+
+The `seed` gives the game a bit of randomness, so a different seed gives you a different starting point. `meshes` is that manifest: a list of mesh names, each with a `U32` id.
+
+Our game's `init` resolves its meshes and then builds a new game:
+
+```roc
+Kind : [Player, Pickup, Door({ open : Bool, lift : F32 })]
+
+Entity : { id : U64, kind : Kind, pos : Vec3, vel : Vec3, yaw : F32, alive : Bool }
+
+Model : { steps : U64, score : U64, meshes : MeshIds, entities : List(Entity) }
+
+init : Config -> Model
+init = |config| new_game(resolve_meshes(config), 8)
+```
+
+The model holds a step counter, the score, the mesh ids we resolved, and a list of entities. An entity is just a record: an id, what kind of thing it is (a player, a pickup or a door), a position, a velocity, a rotation, and whether it's still alive.
+
+`new_game` puts the player at the origin, the door at the back, and loops round to place the pickups in a circle:
+
+```roc
+new_game : MeshIds, U64 -> Model
+new_game = |meshes, pickups| {
+	player = { id: 0, kind: Player, pos: origin, vel: origin, yaw: 0.0, alive: Bool.True }
+	door = { id: 1, kind: Door({ open: Bool.False, lift: 0.0 }), pos: { x: 0.0, y: 1.5, z: -8.0 }, vel: origin, yaw: 0.0, alive: Bool.True }
+
+	var $pickups = List.with_capacity(pickups)
+	var $i = 0
+	while $i < pickups {
+		angle = ($i.to_f32()) * 6.2832 / (pickups.to_f32())
+		pos = { x: 4.0 * angle.cos(), y: 0.5, z: 4.0 * angle.sin() }
+		$pickups = List.append($pickups, { id: 2 + $i, kind: Pickup, pos, vel: origin, yaw: 0.0, alive: Bool.True })
+		$i = $i + 1
+	}
+
+	{ steps: 0, score: 0, meshes, entities: List.concat([player, door], $pickups) }
+}
+```
+
+## step: the game loop
+
+`step` is where the game actually happens. It hooks into the engine's clock and runs on every fixed step, taking the model, the input and the time since the last step. This is where your physics goes, and any other behaviour you want to happen over time.
+
+In the entity game, `step` is just a pipeline:
+
+```roc
+step : Model, Input, F32 -> Model
+step = |model, input, dt|
+	model
+		|> steer(input)
+		|> face(dt)
+		|> integrate(dt)
+		|> spin(dt)
+		|> collect
+		|> open_door
+		|> raise_door(dt)
+		|> sweep
+		|> count_step
+```
+
+Every stage takes a model and hands back a model, very much in the spirit of The Elm Architecture. Want to change the order things happen in? Just reorder the pipe. Let's go through them:
+
+- `steer` turns the WASD keys into a velocity for the player.
+- `face` turns the player to face the way it's moving.
+- `integrate` moves every entity along by its velocity.
+- `spin` spins the pickups.
+- `collect` checks whether the player is touching a pickup. If it is, the pickup dies and the score goes up.
+- `open_door` and `raise_door` open the door once every pickup is gone.
+- `sweep` removes the dead entities.
+- `count_step` adds one to the step counter.
+
+Here's `collect`. It finds the player, counts the pickups within reach, and marks them as no longer alive:
+
+```roc
+collect : Model -> Model
+collect = |m| match player(m) {
+	Err(NotFound) => m
+	Ok(p) => {
+		touched = |e| is_pickup(e) and e.alive and dist2(e.pos, p.pos) < 1.0
+		gained = List.count_if(m.entities, touched)
+		if gained == 0 {
+			return m
+		}
+		entities = List.map(
+			m.entities,
+			|e| if touched(e) {
+				{ ..e, alive: Bool.False }
+			} else {
+				e
+			},
+		)
+		{ ..m, score: m.score + gained, entities }
+	}
+}
+```
+
+The door is two stages. `open_door` counts the pickups that are still alive. If there are any left, nothing changes. If there are none, it finds the door and flips it to open:
+
+```roc
+open_door : Model -> Model
+open_door = |m| {
+	remaining = List.count_if(m.entities, |e| is_pickup(e) and e.alive)
+	if remaining > 0 {
+		m
+	} else {
+		map_entities(
+			m,
+			|e| match e.kind {
+				Door(d) => { ..e, kind: Door({ ..d, open: Bool.True }) }
+				_ => e
+			},
+		)
+	}
+}
+```
+
+Then `raise_door` lifts an open door a little more each step, scaled by delta time, until it reaches its full height:
+
+```roc
+raise_door : Model, F32 -> Model
+raise_door = |m, dt| map_entities(
+	m,
+	|e| match e.kind {
+		Door(d) if d.open and d.lift < door_height => { ..e, kind: Door({ ..d, lift: F32.min(d.lift + door_speed * dt, door_height) }) }
+		_ => e
+	},
+)
+```
+
+<Figure src="/devlog/entity-game/collect-and-door.gif" pixelated={false} alt="The sprout walks around the ring, turning to face where it moves, collecting green pickups until the purple door rises" caption="Walk into every pickup and up goes the door." />
+
+Last of all, `sweep` throws away the dead entities. If everything is still alive, it just hands the model straight back, because `keep_if` allocates a new list even when it keeps every entity:
+
+```roc
+sweep : Model -> Model
+sweep = |m|
+	if List.all(m.entities, |e| e.alive) {
+		m
+	} else {
+		{ ..m, entities: List.keep_if(m.entities, |e| e.alive) }
+	}
+```
+
+## view: describing the scene
+
+The last function is `view`. It takes the model and returns a `Scene`. The engine never actually reads your model; it doesn't really care what's in there. What it _does_ read is the scene. A scene tells the engine what to draw and how to look at it:
+
+```roc
+Camera : { eye : Vec3, target : Vec3, fov_y : F32 }
+Scene : { camera : Camera, draws : List(Draw) }
+```
+
+Here's the entity game's `view`:
+
+```roc
+camera_offset : Vec3
+camera_offset = { x: 0.0, y: 1.5, z: 3.5 }
+
+view : Model -> Scene
+view = |curr| {
+	floor = { id: floor_id, mesh: curr.meshes.plane, pos: origin, scale: { x: 20.0, y: 1.0, z: 20.0 }, yaw: 0.0, tint: { r: 0.051, g: 0.051, b: 0.064 } }
+
+	first = List.with_capacity(List.len(curr.entities) + 1).append(floor)
+	draws = List.fold(curr.entities, first, |acc, e| acc.append(draw(curr.meshes, e)))
+
+	target = match player(curr) {
+		Ok(p) => p.pos
+		Err(NotFound) => origin
+	}
+
+	{ camera: Cam.follow(target, camera_offset), draws }
+}
+```
+
+I like to read this one from the bottom up. The return value tells you the whole story: a camera, and a list of draws.
+
+The camera is in follow mode, so it tracks our little sprout around. The camera package has two ways to point a camera right now:
+
+```roc
+look_at : Vec3, Vec3 -> View
+look_at = |eye, target| { eye, target, fov_y: default_fov_y }
+
+# The eye sits at target + offset.
+follow : Vec3, Vec3 -> View
+follow = |target, offset| {
+    eye: { x: target.x + offset.x, y: target.y + offset.y, z: target.z + offset.z },
+    target,
+    fov_y: default_fov_y,
+}
+```
+
+`look_at` takes an eye and a target: "put the camera here and look at that". `follow` takes a target and an offset, so the camera always keeps the target in view from the same distance away, rather than sitting right on top of it. Bump the `z` of `camera_offset` from `3.5` up to `7.5` and the camera pulls way back.
+
+And there's no need to restart the game to see it. `roc run` watches the source, and when you save, it hot reloads the new code into the engine while the game keeps running.
+
+<Figure src="/devlog/entity-game/hot-reload-camera.gif" pixelated={false} alt="The camera_offset line in the editor above the running game. Changing camera_offset z from 3.5 to 7.5 and back zooms the camera out and in without restarting" caption="Changing camera_offset.z while the game runs, with hot reload." />
+
+The target is the player's position. If there's no player, the camera looks at the origin instead, which is `0, 0, 0`, right in the middle of the floor.
+
+For the draws, we start with the floor: a plane mesh, scaled out to 20 by 20, with a dark grey tint. Then we fold over the entities and append a draw for each one. The sprout keeps its own colours, the pickups become small green spheres, and the door is a flattened purple cube, lifted by however far it's opened.
+
+## Why go pure?
+
+That's the whole game! There are a couple of things I really like about building a game this way.
+
+First, it's easy to test. The model is just data, so you can build one, push it through `step`, and check what comes out, with no engine running at all. The entity game has a bunch of these, and `roc test` runs them:
+
+```roc
+expect {
+	# Standing on every pickup collects every pickup and opens the door in one step.
+	m = new_game(test_meshes, 2)
+	on_top = map_entities(
+		m,
+		|e| if is_pickup(e) {
+			{ ..e, pos: origin }
+		} else {
+			e
+		},
+	)
+	after = step(on_top, idle, 1.0 / 120.0)
+	after.score == 2 and door_open(after) and List.len(after.entities) == 2
+}
+```
+
+Your game logic also can't cause side effects beyond what the Rocco platform gives it, which is a nice guarantee to have.
+
+Second, there's time travel. Because `step` is pure, the same model and input always give you the same next model. So you could keep a log of every input, replay it, and land in exactly the same state. That means you could reproduce a logic bug a player hit, step by step. I believe Media Molecule did something like this for Dreams on the PlayStation, keeping one big log of changes so they could replay what a player did. For debugging, that's a huge win.
+
+And finally, building our own platform means we get to decide what the interface to the engine looks like. That goes all the way down to memory: when Roc needs to allocate or free something, it calls into the Odin host, and how that works is up to whoever builds the platform. We're not boxed in on how things are laid out in memory, or on performance.
+
+Thanks for reading, and keep watching this plant grow! 🌱

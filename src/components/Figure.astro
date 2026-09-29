@@ -1,15 +1,16 @@
 ---
-type Props = { src?: string; alt: string; caption?: string };
-const { src, alt, caption } = Astro.props;
+type Props = { src?: string; alt: string; caption?: string; pixelated?: boolean };
+const { src, alt, caption, pixelated = true } = Astro.props;
 ---
 <figure class="figure">
-  {src ? <img src={src} alt={alt} loading="lazy" /> : <div class="slot pixel-frame">[{alt}]</div>}
+  {src ? <img src={src} alt={alt} loading="lazy" class:list={{ smooth: !pixelated }} /> : <div class="slot pixel-frame">[{alt}]</div>}
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
 
 <style>
   .figure { margin: 0; display: flex; flex-direction: column; gap: 10px; }
   .figure img { width: 100%; height: auto; image-rendering: pixelated; }
+  .figure img.smooth { image-rendering: auto; }
   .slot {
     min-height: 240px;
     display: flex;
