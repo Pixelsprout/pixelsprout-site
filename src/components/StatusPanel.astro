@@ -30,19 +30,25 @@ const marks = { grown: '[x]', growing: '[~]', seed: '[ ]' } as const;
     <ul class="checklist">
       {garden.map((entry) => {
         const state = states.get(entry.id) ?? 'seed';
+        const row = (
+          <>
+            <span>{marks[state]}</span>
+            <span>{entry.kind === 'milestone' ? `M${entry.number}` : 'side'}</span>
+            <span class="title">{entry.title}</span>
+            <span class="state">{state}</span>
+          </>
+        );
+        if (!detailed || entry.tasks.length === 0) {
+          return <li class={state}><div class="row">{row}</div></li>;
+        }
         return (
           <li class={state}>
-            <div class="row">
-              <span>{marks[state]}</span>
-              <span>{entry.kind === 'milestone' ? `M${entry.number}` : 'side'}</span>
-              <span>{entry.title}</span>
-              <span class="state">{state}</span>
-            </div>
-            {detailed && entry.tasks.length > 0 && (
+            <details open={state !== 'grown'}>
+              <summary class="row">{row}</summary>
               <ul class="tasks">
                 {entry.tasks.map((t) => <li class={t.completed ? 'done' : undefined}>{t.completed ? '[x]' : '[ ]'} {t.name}</li>)}
               </ul>
-            )}
+            </details>
           </li>
         );
       })}
@@ -66,6 +72,12 @@ const marks = { grown: '[x]', growing: '[~]', seed: '[ ]' } as const;
   .checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
   .row { display: grid; grid-template-columns: 36px 44px minmax(0, 1fr) 72px; gap: 8px; }
   .state { text-align: right; }
+  summary { list-style: none; cursor: pointer; }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { color: var(--clay); }
+  summary:focus-visible { outline: 2px solid var(--clay); outline-offset: 2px; }
+  summary .title::after { content: ' [+]' / ''; color: var(--text-faint); }
+  details[open] > summary .title::after { content: ' [-]' / ''; }
   .grown { color: var(--sprout); }
   .growing { color: var(--clay); }
   .seed { color: var(--text-faint); }
@@ -78,5 +90,6 @@ const marks = { grown: '[x]', growing: '[~]', seed: '[ ]' } as const;
     .row { grid-template-columns: 36px 44px minmax(0, 1fr); }
     .state { display: none; }
     .tasks { margin-left: 0; }
+    summary { min-height: 44px; align-content: center; }
   }
 </style>
