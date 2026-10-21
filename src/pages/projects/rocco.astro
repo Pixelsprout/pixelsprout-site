@@ -20,6 +20,10 @@ const roccoPosts = posts.filter((p) => p.data.project === "rocco");
             A 3D game engine in Odin that runs games written in Roc. Source on
             <a href="https://github.com/Pixelsprout/rocco-engine">GitHub</a>.
         </p>
+        <nav class="docs-links" aria-label="rocco docs">
+            <a class="tap" href="/projects/rocco/docs/">./docs</a>
+            <a class="tap" href="/projects/rocco/api/">./api</a>
+        </nav>
     </section>
     <StatusPanel garden={garden} at={new Date()} detailed />
     <section class="log">
@@ -37,6 +41,10 @@ const roccoPosts = posts.filter((p) => p.data.project === "rocco");
     }
     .intro h1 {
         font-size: 40px;
+    }
+    .docs-links {
+        display: flex;
+        gap: 24px;
     }
     .intro p {
         margin: 0;

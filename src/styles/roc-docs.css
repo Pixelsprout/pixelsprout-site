@@ -1,0 +1,51 @@
+/* The docs loader appends this to the styles.css of each roc docs package. The fonts sit in ../fonts/. */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/pixelify-sans-latin-600-normal.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: dark;
+  --font-sans: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --body-bg-color: #1B1410;
+  --sidebar-bg-color: #241A14;
+  --code-bg: #120D0A;
+  --violet-bg: #2E221A;
+  --text-color: #EDE3CC;
+  --code-color: #EDE3CC;
+  --faded-color: #A8977F;
+  --gray: #A8977F;
+  --border-color: #3A2C22;
+  --search-border-color: #3A2C22;
+  --violet: #9BD46B;
+  --link-color: #9BD46B;
+  --code-link-color: #9BD46B;
+  --link-hover-color: #F0A070;
+  --text-hover-color: #F0A070;
+  --orange: #F0A070;
+  --green: #9BD46B;
+  --cyan: #E6C98A;
+  --blue: #C79BE0;
+  --magenta: #F0A070;
+}
+
+h1, h2, h3, .pkg-full-name {
+  font-family: 'Pixelify Sans', ui-monospace, monospace;
+  font-weight: 600;
+  font-variant-ligatures: none;
+}

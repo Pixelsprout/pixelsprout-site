@@ -9,12 +9,12 @@ the [rocco](https://github.com/Pixelsprout/rocco-engine) dex task log.
 |---|---|
 | `pnpm install` | Install dependencies |
 | `pnpm dev` | Start the dev server at `localhost:4321`. The dex log comes from GitHub. |
-| `pnpm dev:local` | Start the dev server with the dex log from `../../playground/rocco-engine` |
+| `pnpm dev:local` | Start the dev server with the dex log and the docs from `../../playground/rocco-engine` |
 | `pnpm build` | Build the site to `./dist/` |
 | `pnpm test` | Run the unit tests |
 | `pnpm check` | Type-check the site and the content schemas |
 | `pnpm smoke` | Build twice against the fixtures and check the output |
-| `pnpm run ci` | Run test, check and smoke. CI runs this with `DEX_SOURCE=test/fixtures/tasks.jsonl`. Plain `pnpm ci` is pnpm's clean install, not this script. |
+| `pnpm run ci` | Run test, check and smoke. CI runs this with `DEX_SOURCE=test/fixtures/tasks.jsonl` and `DOCS_SOURCE=test/fixtures/rocco`. Plain `pnpm ci` is pnpm's clean install, not this script. |
 
 ## Writing a post
 
@@ -44,12 +44,35 @@ An open milestone grows by its share of finished subtasks. When rocco's dex log 
 
 The site keeps only task names, states and dates. It never stores task descriptions or results.
 
+## How the docs get here
+
+The rocco docs live in rocco-engine, in `guide/`. The build reads them at the latest rocco release tag. It also downloads
+the `docs.tar.gz` of that release. The tarball holds the `roc docs` HTML of the platform and the bundled packages, and
+`urls.json`.
+
+- `guide/*.md` renders at `/projects/rocco/docs/<name>/`, and `guide/tutorial/*.md` at `/projects/rocco/docs/tutorial/<name>/`.
+  The sidebar sorts the pages of each folder by the `order` field of their frontmatter.
+- Links between pages, links to `images/` and links to other repository files work as they do on GitHub. A link
+  outside `guide/` goes to the file on GitHub at the release tag.
+- The build replaces each marker such as `{{platform_url}}` with its value in `urls.json`. A marker that `urls.json`
+  does not give fails the build.
+- The `roc docs` HTML is served unchanged at `/projects/rocco/api/<package>/`. Only its `styles.css` changes: the build
+  appends `src/styles/roc-docs.css`, for the site's fonts and colours.
+
+If the latest release has no `docs.tar.gz`, the build still succeeds, and the docs pages say that no release has docs
+yet. When a release is published, the `grow-site.yml` workflow in rocco-engine asks Vercel to rebuild the site.
+
+To preview docs that are not released, set `DOCS_SOURCE` to a rocco-engine checkout. Run `roc scripts/build.roc docs` in
+the checkout first, to make the API HTML in `build/docs/`. A checkout has no `urls.json`, so the markers stay unchanged
+and the build log says so.
+
 ## Environment variables
 
 | Name | Where | Purpose |
 |---|---|---|
-| `GITHUB_TOKEN` | Required on Vercel | Authenticates the GitHub API lookup of the latest commit. Use a fine-grained token with no extra permissions. |
+| `GITHUB_TOKEN` | Required on Vercel | Authenticates the GitHub API lookups of the latest commit and the latest release. Use a fine-grained token with no extra permissions. |
 | `DEX_SOURCE` | Optional | A URL or file path (`~/…` works) that replaces the GitHub fetch |
+| `DOCS_SOURCE` | Optional | A rocco-engine checkout (`~/…` works) that replaces the release fetch of the docs |
 | `POSTS_DIR` | Tests only | Replaces `src/content/posts` |
 
 ## Design

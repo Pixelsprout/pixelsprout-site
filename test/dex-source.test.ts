@@ -20,6 +20,7 @@ function fakeFetch(routes: Record<string, { status: number; body: unknown }>) {
       status: route.status,
       text: async () => String(route.body),
       json: async () => route.body,
+      arrayBuffer: async () => new TextEncoder().encode(String(route.body)).buffer,
     };
   };
   return { fetch, calls };

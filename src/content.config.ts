@@ -2,6 +2,7 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { dexLoader } from './loaders/dex';
+import { docsLoader } from './loaders/docs';
 import { POST_TYPE_SLUGS } from './lib/post-meta';
 
 const posts = defineCollection({
@@ -34,4 +35,13 @@ const garden = defineCollection({
   }),
 });
 
-export const collections = { posts, garden };
+// One entry per guide page, and one source entry that says where the pages came from.
+const docs = defineCollection({
+  loader: docsLoader(),
+  schema: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('page'), path: z.string(), title: z.string(), summary: z.string(), order: z.number() }),
+    z.object({ kind: z.literal('source'), origin: z.string(), ref: z.string().nullable(), api: z.array(z.string()) }),
+  ]),
+});
+
+export const collections = { posts, garden, docs };

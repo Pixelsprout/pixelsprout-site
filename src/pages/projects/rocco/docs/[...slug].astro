@@ -1,0 +1,64 @@
+---
+import { render } from 'astro:content';
+import Docs from '../../../../layouts/Docs.astro';
+import { getDocs, type DocsPage } from '../../../../lib/content';
+import { docsSections, docsUrl } from '../../../../lib/docs';
+
+type Props = { pages: DocsPage[]; page?: DocsPage; folder?: string; previous?: DocsPage; next?: DocsPage };
+
+export async function getStaticPaths() {
+  const { pages } = await getDocs();
+  const sections = docsSections(pages);
+  const reading = sections.flatMap((s) => s.pages);
+  return [
+    { params: { slug: undefined }, props: { pages, folder: '' } },
+    ...sections.filter((s) => s.folder).map((s) => ({ params: { slug: s.folder }, props: { pages, folder: s.folder } })),
+    ...reading.map((page, i) => ({ params: { slug: page.slug }, props: { pages, page, previous: reading[i - 1], next: reading[i + 1] } })),
+  ];
+}
+
+const { pages, page, folder, previous, next } = Astro.props;
+const { Content } = page ? await render(page) : { Content: null };
+const sections = docsSections(pages).filter((s) => folder === '' || s.folder === folder);
+const heading = folder ? sections[0].title : 'rocco docs';
+---
+{page && Content ? (
+  <Docs title={page.title} description={page.data.summary} pages={pages} command={`cat ${page.data.path}`}>
+    <div class="prose"><Content /></div>
+    <nav class="pager" aria-label="Pages">
+      {previous && <a class="tap" href={docsUrl(previous.slug)}>&lt; {previous.title}</a>}
+      {next && <a class="tap next" href={docsUrl(next.slug)}>{next.title} &gt;</a>}
+    </nav>
+  </Docs>
+) : (
+  <Docs title={heading} description="Docs for rocco game authors: the guide and the tutorial." pages={pages} command={`ls guide/${folder}`}>
+    <h1>{heading}</h1>
+    {pages.length === 0 ? (
+      <p class="empty">No release has docs yet. The docs come from the latest rocco release.</p>
+    ) : (
+      sections.map((section) => (
+        <section class="section">
+          {folder === '' && <h2>{section.title}</h2>}
+          <ul>
+            {section.pages.map((p) => (
+              <li><a href={docsUrl(p.slug)}>{p.title}</a><span class="summary">{p.data.summary}</span></li>
+            ))}
+          </ul>
+        </section>
+      ))
+    )}
+  </Docs>
+)}
+
+<style>
+  h1 { font-size: 46px; }
+  @media (max-width: 720px) { h1 { font-size: 32px; } }
+  .pager { display: flex; gap: 24px; font-size: 14px; }
+  .next { margin-left: auto; }
+  .empty { margin: 0; color: var(--text-muted); }
+  .section { display: flex; flex-direction: column; gap: 12px; }
+  .section h2 { font-size: 26px; }
+  .section ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .section li { display: flex; flex-direction: column; }
+  .summary { color: var(--text-muted); font-size: 14px; }
+</style>

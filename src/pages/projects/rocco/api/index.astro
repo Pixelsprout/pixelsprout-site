@@ -1,0 +1,29 @@
+---
+import Docs from '../../../../layouts/Docs.astro';
+import { getDocs } from '../../../../lib/content';
+import { API_BASE } from '../../../../lib/docs';
+
+const { source, pages } = await getDocs();
+---
+<Docs title="rocco API" description="The rocco API reference, made by roc docs." pages={pages} command="ls api/">
+  <h1>rocco API</h1>
+  {source.api.length > 0 ? (
+    <>
+      <p class="note">roc docs makes these pages from the ## comments in the platform and the bundled packages{source.ref && ` at ${source.ref}`}.</p>
+      <ul class="packages">
+        {source.api.map((name) => <li><a class="tap" href={`${API_BASE}${name}/`}>{name}</a></li>)}
+      </ul>
+    </>
+  ) : pages.length === 0 ? (
+    <p class="note">No release has docs yet. The API pages come from the latest rocco release.</p>
+  ) : (
+    <p class="note">This build has no API pages. Run roc scripts/build.roc docs in the rocco checkout.</p>
+  )}
+</Docs>
+
+<style>
+  h1 { font-size: 46px; }
+  @media (max-width: 720px) { h1 { font-size: 32px; } }
+  .note { margin: 0; color: var(--text-muted); }
+  .packages { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+</style>

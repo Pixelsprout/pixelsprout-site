@@ -1,0 +1,47 @@
+---
+import Base from './Base.astro';
+import Prompt from '../components/Prompt.astro';
+import type { DocsPage } from '../lib/content';
+import { API_BASE, DOCS_BASE, docsSections, docsUrl } from '../lib/docs';
+
+type Props = { title: string; description: string; pages: DocsPage[]; command: string };
+const { title, description, pages, command } = Astro.props;
+const sections = docsSections(pages);
+const path = Astro.url.pathname;
+const current = (href: string) => (path === href ? 'page' : undefined);
+---
+<Base title={title} description={description}>
+  <div class="docs">
+    <nav class="sidebar" aria-label="Docs">
+      <a class="tap" href={DOCS_BASE} aria-current={current(DOCS_BASE)}>contents</a>
+      {sections.map((section) => (
+        <div class="group">
+          {section.folder
+            ? <a class="heading tap" href={docsUrl(section.folder)} aria-current={current(docsUrl(section.folder))}>{section.title}</a>
+            : <span class="heading">{section.title}</span>}
+          {section.pages.map((page) => (
+            <a class="tap" href={docsUrl(page.slug)} aria-current={current(docsUrl(page.slug))}>{page.title}</a>
+          ))}
+        </div>
+      ))}
+      <a class="tap" href={API_BASE} aria-current={current(API_BASE)}>API reference</a>
+    </nav>
+    <article>
+      <Prompt path="~/rocco" command={command} />
+      <slot />
+    </article>
+  </div>
+</Base>
+
+<style>
+  .docs { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 72px; }
+  .sidebar { display: flex; flex-direction: column; gap: 20px; font-size: 13px; color: var(--text-muted); }
+  .group { display: flex; flex-direction: column; }
+  .heading { color: var(--text); }
+  .sidebar a[aria-current='page'] { color: var(--clay); }
+  article { display: flex; flex-direction: column; gap: 28px; max-width: 700px; min-width: 0; }
+  @media (max-width: 720px) {
+    .docs { grid-template-columns: 1fr; gap: 32px; }
+    .sidebar { order: 2; }
+  }
+</style>

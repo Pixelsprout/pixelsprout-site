@@ -29,7 +29,8 @@ a { color: var(--sprout); text-decoration: none; }
 a:hover { color: var(--clay); text-decoration: underline; }
 a:focus-visible, button:focus-visible { outline: 2px solid var(--clay); outline-offset: 2px; }
 
-h1, h2, h3 { font-family: var(--font-pixel); font-weight: 600; line-height: 1.15; margin: 0; }
+/* Pixelify Sans draws its fi ligature like an A. */
+h1, h2, h3 { font-family: var(--font-pixel); font-weight: 600; line-height: 1.15; margin: 0; font-variant-ligatures: none; }
 
 .page {
   max-width: 1040px;
@@ -87,7 +88,22 @@ main { display: flex; flex-direction: column; gap: 48px; flex-grow: 1; }
   cursor: pointer;
 }
 
+.prose { display: flex; flex-direction: column; gap: 24px; font-size: 17px; line-height: 1.75; }
+.prose p { margin: 0; color: #DCD0B6; }
+.prose h1 { font-size: 46px; }
+.prose h2 { margin-top: 12px; font-size: 26px; }
+.prose h2::before { content: '## '; color: var(--text-faint); }
+.prose h3 { font-size: 20px; }
+.prose :not(pre) > code { color: var(--clay); }
+.prose ul, .prose ol { margin: 0; padding-left: 24px; }
+.prose blockquote { margin: 0; padding-left: 16px; border-left: 4px solid var(--edge); color: var(--text-muted); }
+.prose img { max-width: 100%; height: auto; }
+.prose table { border-collapse: collapse; font-size: 15px; }
+.prose th, .prose td { padding: 6px 12px; border: 2px solid var(--edge); text-align: left; }
+
 @media (max-width: 720px) {
   .page { padding: 20px 16px 28px; gap: 32px; }
   main { gap: 32px; }
+  .prose { font-size: 16px; }
+  .prose h1 { font-size: 32px; }
 }

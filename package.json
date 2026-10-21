@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "dev:local": "DEX_SOURCE=../../playground/rocco-engine/.dex/tasks.jsonl astro dev",
+    "dev:local": "DEX_SOURCE=../../playground/rocco-engine/.dex/tasks.jsonl DOCS_SOURCE=../../playground/rocco-engine astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",

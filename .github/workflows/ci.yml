@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DEX_SOURCE: test/fixtures/tasks.jsonl
+      DOCS_SOURCE: test/fixtures/rocco
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v6
