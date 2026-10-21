@@ -3,7 +3,7 @@ import { REPO } from './github';
 
 export const DOCS_BASE = '/projects/rocco/docs/';
 export const API_BASE = '/projects/rocco/api/';
-export const API_PACKAGES = ['platform', 'linalg', 'mesh', 'ui'];
+export const API_PACKAGES = ['platform', 'linalg', 'mesh', 'ui', 'camera'];
 
 export type Markers = Record<string, string>;
 
