@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { gzipSync } from 'node:zlib';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { readTarGz } from '../src/lib/tar';
 
@@ -30,6 +30,11 @@ describe('readTarGz', () => {
     const long = files.find((f) => f.path.startsWith('ui/AVeryLong'))!;
     expect(long.path).toHaveLength(105);
     expect(new TextDecoder().decode(long.data)).toBe('<p>long</p>\n');
+  });
+
+  it('fails on a tarball that ends inside a file', () => {
+    const whole = gunzipSync(tarOf('a.html', 'x'.repeat(600)));
+    expect(() => readTarGz(gzipSync(whole.subarray(0, 900)))).toThrow(/a\.html is cut short/);
   });
 
   it('rejects a path that leaves the tarball', () => {

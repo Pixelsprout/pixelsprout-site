@@ -41,7 +41,7 @@ const heading = folder ? sections[0].title : 'rocco docs';
           {folder === '' && <h2>{section.title}</h2>}
           <ul>
             {section.pages.map((p) => (
-              <li><a href={docsUrl(p.slug)}>{p.title}</a><span class="summary">{p.data.summary}</span></li>
+              <li><a class="tap" href={docsUrl(p.slug)}>{p.title}</a><span class="summary">{p.data.summary}</span></li>
             ))}
           </ul>
         </section>
@@ -51,8 +51,6 @@ const heading = folder ? sections[0].title : 'rocco docs';
 )}
 
 <style>
-  h1 { font-size: 46px; }
-  @media (max-width: 720px) { h1 { font-size: 32px; } }
   .pager { display: flex; gap: 24px; font-size: 14px; }
   .next { margin-left: auto; }
   .empty { margin: 0; color: var(--text-muted); }

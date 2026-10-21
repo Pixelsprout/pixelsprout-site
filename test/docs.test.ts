@@ -20,6 +20,11 @@ describe('replaceMarkers', () => {
     );
   });
 
+  it('fails on a marker with spaces or a hyphen, so a typo cannot reach the page', () => {
+    expect(() => replaceMarkers('{{ platform_url }}', markers, 'guide/install.md')).toThrow(/unknown marker \{\{ platform_url \}\}/);
+    expect(() => replaceMarkers('{{platform-url}}', markers, 'guide/install.md')).toThrow(/unknown marker \{\{platform-url\}\}/);
+  });
+
   it('leaves the text unchanged when there is no urls.json', () => {
     expect(replaceMarkers('a {{camera_url}} {{platform_url}}', null, 'guide/install.md')).toBe(
       'a {{camera_url}} {{platform_url}}',
@@ -77,6 +82,16 @@ describe('rewriteLinks', () => {
     expect(rewrite(text)).toBe(
       '```md\n[calls](calls.md)\n```\n\nWrite `[calls](calls.md)` to link [calls](/projects/rocco/docs/calls/).\n~~~\n![x](images/x.png)\n~~~',
     );
+  });
+
+  it('rewrites single-quoted HTML URLs and leaves footnotes alone', () => {
+    expect(rewrite("<img src='images/cube.png'>")).toBe("<img src='/projects/rocco/docs/images/cube.png'>");
+    expect(rewrite('[^1]: See calls.md')).toBe('[^1]: See calls.md');
+  });
+
+  it('leaves a fence inside a list item alone', () => {
+    const text = '1. Run this:\n\n    ```md\n    [calls](calls.md)\n    ```\n';
+    expect(rewrite(text)).toBe(text);
   });
 
   it('keeps a link that climbs out of the repository', () => {

@@ -11,7 +11,8 @@ export class DocsError extends Error {
   override name = 'DocsError';
 }
 
-const MARKER = /\{\{([A-Za-z0-9_]+)\}\}/g;
+// Matches any text in double braces, so a misspelt marker fails instead of reaching the page.
+const MARKER = /\{\{([^{}\n]*)\}\}/g;
 
 // With no urls.json, as in a checkout preview, the reader sees the markers as GitHub shows them.
 export function replaceMarkers(text: string, markers: Markers | null, page: string): string {
@@ -48,19 +49,22 @@ function resolveLink(href: string, page: string, ref: string): string {
     : `https://github.com/${REPO}/blob/${ref}/${target}${suffix}`;
 }
 
-const FENCE = /^ {0,3}(`{3,}|~{3,})/;
+// Any indent, so a fence inside a list item counts.
+const FENCE = /^\s*(`{3,}|~{3,})/;
 const CODE_SPAN = /(`+)[\s\S]*?\1/g;
 const INLINE_LINK = /(\]\(\s*)(<[^>]*>|[^\s()<>]+)/g;
-const REFERENCE = /^( {0,3}\[[^\]]+\]:\s*)(<[^>]*>|\S+)/;
+const REFERENCE = /^( {0,3}\[[^\]^][^\]]*\]:\s*)(<[^>]*>|\S+)/;
 const HTML_TAG = /<(?:a|img)\b[^>]*>/gi;
-const HTML_URL = /(\s(?:href|src)=")([^"]*)(")/gi;
+const HTML_URL = /(\s(?:href|src)=(["']))(.*?)(\2)/gi;
 
 function rewriteText(text: string, resolve: (href: string) => string): string {
   const destination = (href: string) => (href.startsWith('<') ? `<${resolve(href.slice(1, -1))}>` : resolve(href));
   return text
     .replace(INLINE_LINK, (_, open: string, href: string) => open + destination(href))
     .replace(REFERENCE, (_, open: string, href: string) => open + destination(href))
-    .replace(HTML_TAG, (tag) => tag.replace(HTML_URL, (_, open: string, href: string, close: string) => open + resolve(href) + close));
+    .replace(HTML_TAG, (tag) =>
+      tag.replace(HTML_URL, (_, open: string, _quote: string, href: string, close: string) => open + resolve(href) + close),
+    );
 }
 
 // Rewrites the Markdown before Astro renders it, because Astro turns a relative image into an import of a local file.

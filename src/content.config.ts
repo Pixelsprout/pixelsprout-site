@@ -35,7 +35,7 @@ const garden = defineCollection({
   }),
 });
 
-// One entry per guide page, and one source entry that says where the pages came from.
+// The loader adds one source entry, with the id SOURCE_ID, beside the pages.
 const docs = defineCollection({
   loader: docsLoader(),
   schema: z.discriminatedUnion('kind', [

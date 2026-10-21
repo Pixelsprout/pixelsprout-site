@@ -20,7 +20,8 @@ const TYPES: Record<string, string> = {
   '.woff2': 'font/woff2',
 };
 
-const exists = (path: string) => stat(path).then((info) => info.isFile(), () => false);
+const exists = (path: string, kind: 'file' | 'folder' = 'file') =>
+  stat(path).then((info) => (kind === 'file' ? info.isFile() : info.isDirectory()), () => false);
 
 // Serves the files in dev and copies them into the build. Astro never sees them as pages.
 export function docsFiles(): AstroIntegration {
@@ -33,12 +34,18 @@ export function docsFiles(): AstroIntegration {
       },
       'astro:server:setup': ({ server }) => {
         server.middlewares.use(async (req, res, next) => {
-          const pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
+          const url = new URL(req.url ?? '/', 'http://localhost');
+          let pathname: string;
+          try {
+            pathname = decodeURIComponent(url.pathname);
+          } catch {
+            return next();
+          }
           const path = join(root, normalize(pathname));
           if (!path.startsWith(root)) return next();
           const index = join(path, 'index.html');
           if (!pathname.endsWith('/') && (await exists(index))) {
-            res.writeHead(301, { Location: `${pathname}/` }).end();
+            res.writeHead(301, { Location: `${url.pathname}/${url.search}` }).end();
             return;
           }
           const file = pathname.endsWith('/') ? index : path;
@@ -47,7 +54,7 @@ export function docsFiles(): AstroIntegration {
         });
       },
       'astro:build:done': async ({ dir }) => {
-        if (await stat(root).then(() => true, () => false)) await cp(root, fileURLToPath(dir), { recursive: true });
+        if (await exists(root, 'folder')) await cp(root, fileURLToPath(dir), { recursive: true });
       },
     },
   };

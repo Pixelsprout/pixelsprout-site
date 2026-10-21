@@ -40,8 +40,10 @@ const current = (href: string) => (path === href ? 'page' : undefined);
   .heading { color: var(--text); }
   .sidebar a[aria-current='page'] { color: var(--clay); }
   article { display: flex; flex-direction: column; gap: 28px; max-width: 700px; min-width: 0; }
+  article > :global(h1) { font-size: 46px; }
   @media (max-width: 720px) {
     .docs { grid-template-columns: 1fr; gap: 32px; }
     .sidebar { order: 2; }
+    article > :global(h1) { font-size: 32px; }
   }
 </style>

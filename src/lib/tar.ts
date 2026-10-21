@@ -30,8 +30,11 @@ export function readTarGz(gz: Uint8Array): TarFile[] {
     const header = tar.subarray(offset, offset + BLOCK);
     if (header.every((byte) => byte === 0)) break;
     const size = parseInt(field(header, 124, 12).trim() || '0', 8);
+    const name = field(header, 0, 100);
+    if (Number.isNaN(size)) throw new Error(`The tarball entry ${name} has no valid size`);
     const type = String.fromCharCode(header[156]);
     const data = tar.subarray(offset + BLOCK, offset + BLOCK + size);
+    if (data.length < size) throw new Error(`The tarball entry ${name} is cut short`);
     offset += BLOCK + Math.ceil(size / BLOCK) * BLOCK;
 
     if (type === 'x') {
@@ -40,7 +43,6 @@ export function readTarGz(gz: Uint8Array): TarFile[] {
     }
     if (type === 'g') continue;
     const prefix = field(header, 345, 155);
-    const name = field(header, 0, 100);
     const path = paxName ?? (prefix ? `${prefix}/${name}` : name);
     paxName = undefined;
     if (type !== '0' && type !== '\0') continue;

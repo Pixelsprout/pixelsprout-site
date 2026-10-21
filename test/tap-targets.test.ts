@@ -23,6 +23,12 @@ describe('tap targets', () => {
     ['src/components/SiteFooter.astro', /<a class="tap" href="https:\/\/github\.com\/Pixelsprout"/],
     ['src/pages/index.astro', /<a class="more tap" href="\/devlog\/"/],
     ['src/pages/index.astro', /<a class="tap" href=\{`\/devlog\/\$\{slugOf\(latest\)\}\/`\}/],
+    ['src/pages/projects/rocco.astro', /<a class="tap" href="\/projects\/rocco\/docs\/"/],
+    ['src/pages/projects/rocco.astro', /<a class="tap" href="\/projects\/rocco\/api\/"/],
+    ['src/layouts/Docs.astro', /<a class="tap" href=\{docsUrl\(page\.slug\)\}/],
+    ['src/layouts/Docs.astro', /<a class="tap" href=\{API_BASE\}/],
+    ['src/pages/projects/rocco/docs/[...slug].astro', /<a class="tap" href=\{docsUrl\(p\.slug\)\}/],
+    ['src/pages/projects/rocco/docs/[...slug].astro', /<a class="tap next" href=\{docsUrl\(next\.slug\)\}/],
   ];
   for (const [file, pattern] of smallLinks) {
     it(`uses .tap on ${pattern.source.slice(0, 40)} in ${file}`, () => {

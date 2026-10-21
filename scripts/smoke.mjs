@@ -84,10 +84,12 @@ check(read('projects/rocco/api/platform/index.html') === readFileSync('test/fixt
 check(read('projects/rocco/index.html').includes('href="/projects/rocco/docs/"'), 'the rocco page does not link to the docs');
 check(read('projects/rocco/index.html').includes('href="/projects/rocco/api/"'), 'the rocco page does not link to the API');
 
-build({ POSTS_DIR: 'test/fixtures/empty-posts' });
+build({ POSTS_DIR: 'test/fixtures/empty-posts', DOCS_SOURCE: 'test/fixtures/empty-docs' });
 
 check(read('index.html').includes('nothing published yet'), 'the homepage lacks the empty state');
 check(read('devlog/index.html').includes('nothing published yet'), '/devlog/ lacks the empty state');
 check(read('rss.xml').includes('<channel>'), 'rss.xml is not a feed');
+check(read('projects/rocco/docs/index.html').includes('No release has docs yet.'), '/projects/rocco/docs/ lacks the empty state');
+check(read('projects/rocco/api/index.html').includes('No release has docs yet.'), '/projects/rocco/api/ lacks the empty state');
 
 console.log('smoke: ok');
