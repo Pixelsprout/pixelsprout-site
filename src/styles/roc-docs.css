@@ -12,10 +12,10 @@
   src: url('../fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Pixelify Sans';
-  font-weight: 600;
+  font-family: 'Jersey 10';
   font-display: swap;
-  src: url('../fonts/pixelify-sans-latin-600-normal.woff2') format('woff2');
+  size-adjust: 120%;
+  src: url('../fonts/jersey-10-latin-400-normal.woff2') format('woff2');
 }
 
 :root {
@@ -45,7 +45,6 @@
 }
 
 h1, h2, h3, .pkg-full-name {
-  font-family: 'Pixelify Sans', ui-monospace, monospace;
-  font-weight: 600;
-  font-variant-ligatures: none;
+  font-family: 'Jersey 10', ui-monospace, monospace;
+  font-weight: 400;
 }

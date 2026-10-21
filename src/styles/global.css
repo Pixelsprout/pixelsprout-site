@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'Jersey 10';
+  font-display: swap;
+  /* Jersey 10 draws small for its font size. */
+  size-adjust: 120%;
+  src: url('@fontsource/jersey-10/files/jersey-10-latin-400-normal.woff2') format('woff2');
+}
+
 :root {
   --soil: #1B1410;
   --soil-raised: #241A14;
@@ -9,7 +17,7 @@
   --text-faint: #9A8872;
   --sprout: #9BD46B;
   --clay: #F0A070;
-  --font-pixel: 'Pixelify Sans', ui-monospace, monospace;
+  --font-pixel: 'Jersey 10', ui-monospace, monospace;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   color-scheme: dark;
 }
@@ -29,8 +37,7 @@ a { color: var(--sprout); text-decoration: none; }
 a:hover { color: var(--clay); text-decoration: underline; }
 a:focus-visible, button:focus-visible { outline: 2px solid var(--clay); outline-offset: 2px; }
 
-/* Pixelify Sans draws its fi ligature like an A. */
-h1, h2, h3 { font-family: var(--font-pixel); font-weight: 600; line-height: 1.15; margin: 0; font-variant-ligatures: none; }
+h1, h2, h3 { font-family: var(--font-pixel); font-weight: 400; line-height: 1.15; margin: 0; }
 
 .page {
   max-width: 1040px;

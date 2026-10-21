@@ -221,7 +221,7 @@ Every error fails the build. Vercel keeps the last good deployment live.
   The fence meta `title="<path>"` shows a file name bar.
   If Shiki has no Roc or Odin grammar, add a TextMate grammar for each to the repo.
 - Copy button: one inline script, about 15 lines. This is the only client JavaScript.
-- Fonts: Pixelify Sans (headings) and IBM Plex Mono (everything else), self-hosted with Fontsource.
+- Fonts: Jersey 10 (headings) and IBM Plex Mono (everything else), self-hosted with Fontsource.
 - Layout: one breakpoint at 720px. Below it, use the phone layout from the canvas.
 - Palette (from the logo and the canvas):
 

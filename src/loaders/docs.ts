@@ -11,7 +11,7 @@ export const SOURCE_ID = '#source';
 const FONTS = [
   'node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2',
   'node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2',
-  'node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-600-normal.woff2',
+  'node_modules/@fontsource/jersey-10/files/jersey-10-latin-400-normal.woff2',
 ];
 
 const STYLESHEET = /^[^/]+\/styles\.css$/;
