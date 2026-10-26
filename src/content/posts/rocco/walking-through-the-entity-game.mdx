@@ -6,7 +6,9 @@ type: walkthrough
 draft: false
 ---
 
-In the [first post](/devlog/hello-rocco/) I showed you the three functions every Rocco game is built from. This time, let's walk through a real (if very small) game from top to bottom: the entity game.
+In the [announcement post](/devlog/hello-rocco/) I showed you the functions every Rocco game is built from. This time, let's walk through a real (if very small) game from top to bottom: the entity game.
+
+> This post shows the entity game as it was in late September 2026, before Rocco's first release. Back then a game had three functions, and the code here uses that older API. A Rocco game now has five calls, and its scene is a tree of nodes. For the current API, follow the [tutorial](/projects/rocco/docs/tutorial/), which builds a very similar game.
 
 You play as a little sprout. There's a ring of green spheres on the floor, and a purple door off in the distance. Walk into all the spheres and the door lifts open. That's it! But it's enough to touch pretty much every part of the engine.
 
@@ -32,9 +34,9 @@ And if you typo the name? You get id `0`, which is the engine's bright magenta f
 
 ## init: setting up the model
 
-Remember, a Rocco game has three functions: `init`, `step` and `view`. `init` takes a `Config` and returns your `Model`.
+At this point, a Rocco game had three functions: `init`, `step` and `view`. `init` takes a `Config` and returns your `Model`.
 
-`Config` is part of the platform's vocabulary, which is the language the game and the engine use to talk to each other. It only has two things in it right now:
+`Config` is part of the platform's vocabulary, which is the language the game and the engine use to talk to each other. At the time, it only had two things in it:
 
 ```roc
 Config : { seed : U64, meshes : List({ name : Str, id : U32 }) }
@@ -215,7 +217,7 @@ view = |curr| {
 
 I like to read this one from the bottom up. The return value tells you the whole story: a camera, and a list of draws.
 
-The camera is in follow mode, so it tracks our little sprout around. The camera package has two ways to point a camera right now:
+The camera is in follow mode, so it tracks our little sprout around. The camera package had two ways to point a camera at the time:
 
 ```roc
 look_at : Vec3, Vec3 -> View
