@@ -1,16 +1,18 @@
 ---
 title: "Hello Rocco!"
-date: 2026-09-29
-summary: "Meet Rocco, a tiny 3D game engine where you write games in Roc and the engine runs on Odin."
+date: 2026-10-27
+summary: "Meet Rocco, a 3D game engine where you write games in Roc and the engine runs on Odin. v0.5.0 is out, with docs and a ten-chapter tutorial."
 type: announcement
 draft: false
 ---
 
 Hello, and welcome to the very first post about Rocco!
 
-Rocco is a 3D game engine in very, very early development. The goal is a high-level, declarative interface for writing games, without giving up performance or robustness under the hood. You can dive into the code on [GitHub](https://github.com/Pixelsprout/rocco-engine), or even try building the engine yourself by following the README.md guide.
+Rocco is a 3D game engine where you write your game in [Roc](https://www.roc-lang.org/), "a fast, friendly, functional language", and the engine itself is written in [Odin](https://odin-lang.org/). That's where the name comes from: Rocco is sort of a mash-up of "Roc" and "Odin".
 
-Rocco games are written in [Roc](https://www.roc-lang.org/), "a fast, friendly, functional language", and the engine itself is written in [Odin](https://odin-lang.org/). That's where the name comes from: Rocco is sort of a mash-up of "Roc" and "Odin".
+The goal is a high-level, declarative interface for writing games, without giving up performance or robustness under the hood. It's still young, but as of [v0.5.0](https://github.com/Pixelsprout/rocco-engine/releases/tag/v0.5.0) it has enough in it to make a small game from start to finish: lit and shadowed 3D scenes, models with animations, sound, a UI, collisions, and keyboard and gamepad input. There's a [guide and a ten-chapter tutorial](/projects/rocco/docs/) too, and all you need to install is Roc.
+
+<Figure src="/devlog/hello-rocco/pip-walking.png" pixelated={false} alt="Pip, a small white robot with an orange antenna, walks across a green floor among yellow sphere pickups, with a red door behind and a pickup counter in the top corner" caption="Pip, the tutorial character, mid-walk in chapter 10." />
 
 ## Why Odin?
 
@@ -22,21 +24,25 @@ Writing a whole game in a systems language can get cumbersome, though, and that'
 
 ## What a Rocco game looks like
 
-The API for a Rocco game is heavily inspired by [The Elm Architecture](https://guide.elm-lang.org/architecture/). You write three functions:
+The API for a Rocco game is heavily inspired by [The Elm Architecture](https://guide.elm-lang.org/architecture/). Your game is five plain functions:
 
 ```roc
-init : Config -> Model              # once, at startup
-step : Model, Input, F32 -> Model   # once per fixed step, 120 Hz
-view : Model -> Scene               # once per fixed step, after step
+launch : Config -> Launch
+init : Config -> { model : Model, commands : List(Command) }
+step : Model, Input, QueryResults, F32 -> { model : Model, commands : List(Command) }
+loaded : Model, Str, Manifest -> Model
+view : Model -> Scene
 ```
 
-`init` configures your application and returns the model, which Odin then holds onto. `step` runs on every tick of the game's clock. This is where you update your model, and it's where most of your game logic lives. Finally, `view` runs after `step` and describes what to draw. You hand back a `Scene`, which is a list of meshes you'd like the engine to render, plus a camera to look through.
+`launch` sets up the window and a few engine settings. `init` builds your first model, which Odin then holds onto for you. `step` runs on every tick of the game's clock, and it's where most of your game logic lives. `loaded` tells you when the models, textures and sounds you asked for are ready. Finally, `view` describes what to draw.
 
-Here's the `step` function from a little Pong game:
+None of these functions can actually _do_ anything. They can't read a file, draw a mesh or play a sound. Instead, they return values that describe what they want, and the engine does the work. Want to load some assets or quit the game? Return a `Load` or `Quit` command from `step`. Want to know what the player bumped into? Ask for it in your scene, and the answer turns up in the next step's `QueryResults`. Because everything is just data in and data out, you can test every part of your game with `roc test`.
+
+Here's the heart of a little Pong game:
 
 ```roc
-step : Model, Input, F32 -> Model
-step = |m, input, dt| {
+update : Model, Input, F32 -> Model
+update = |m, input, dt| {
     next = game_state(m, input)
     if next.state == Running {
         next
@@ -59,31 +65,78 @@ And here's its `view` function:
 view : Model -> Scene
 view = |m| {
     c = m.cube
-    fixed = [
-        box(c, 10, { x: 0.0, y: -0.1, z: 0.0 }, { x: 2.0 * half_width, y: 0.1, z: 2.0 * half_depth }, { r: 0.1, g: 0.12, b: 0.15 }),
-        box(c, 11, { x: 0.0, y: 0.1, z: -half_depth - 0.15 }, { x: 2.0 * half_width, y: 0.3, z: 0.3 }, white),
-        box(c, 12, { x: 0.0, y: 0.1, z: half_depth + 0.15 }, { x: 2.0 * half_width, y: 0.3, z: 0.3 }, white),
-        box(c, 0, { x: -paddle_x, y: 0.2, z: m.left }, { x: 2.0 * paddle_half_thick, y: 0.4, z: 2.0 * paddle_half_len }, { r: 0.3, g: 0.7, b: 1.0 }),
-        box(c, 1, { x: paddle_x, y: 0.2, z: m.right }, { x: 2.0 * paddle_half_thick, y: 0.4, z: 2.0 * paddle_half_len }, { r: 1.0, g: 0.5, b: 0.3 }),
-        box(c, m.ball.id, { x: m.ball.x, y: 0.2, z: m.ball.z }, { x: 2.0 * ball_half, y: 2.0 * ball_half, z: 2.0 * ball_half }, white),
+    nodes = [
+        Light(ambient),
+        Light(sun),
+        Draw(box(c, 10, { x: 0.0, y: -0.1, z: 0.0 }, { x: 2.0 * half_width, y: 0.1, z: 2.0 * half_depth }, { r: 0.01, g: 0.013, b: 0.02 })),
+        Draw(box(c, 11, { x: 0.0, y: 0.1, z: -half_depth - 0.15 }, { x: 2.0 * half_width, y: 0.3, z: 0.3 }, white)),
+        Draw(box(c, 12, { x: 0.0, y: 0.1, z: half_depth + 0.15 }, { x: 2.0 * half_width, y: 0.3, z: 0.3 }, white)),
+        Draw(box(c, 0, { x: -paddle_x, y: 0.2, z: m.left }, { x: 2.0 * paddle_half_thick, y: 0.4, z: 2.0 * paddle_half_len }, { r: 0.073, g: 0.448, b: 1.0 })),
+        Draw(box(c, 1, { x: paddle_x, y: 0.2, z: m.right }, { x: 2.0 * paddle_half_thick, y: 0.4, z: 2.0 * paddle_half_len }, { r: 1.0, g: 0.214, b: 0.073 })),
+        Draw(box(c, m.ball.id, { x: m.ball.x, y: 0.2, z: m.ball.z }, { x: 2.0 * ball_half, y: 2.0 * ball_half, z: 2.0 * ball_half }, white)),
     ]
 
-    draws = fixed
-        |> pips(c, m.score.left, 1000, -1.0, pip_tint(m.state, m.score.left, m.score.right))
-        |> pips(c, m.score.right, 2000, 1.0, pip_tint(m.state, m.score.right, m.score.left))
-
-    { camera: Cam.look_at({ x: 0.0, y: 14.0, z: 7.0 }, { x: 0.0, y: 0.0, z: 0.0 }), draws }
+    { ..Scene.empty, camera: Cam.look_at({ x: 0.0, y: 14.0, z: 7.0 }, { x: 0.0, y: 0.0, z: 0.0 }), nodes, ui: hud(m) }
 }
 ```
 
-The whole scene is just data: a list of boxes for the floor, walls, paddles and ball, a few score pips on top, and a camera looking down at the table.
+The whole scene is just data: two lights, a list of boxes for the floor, walls, paddles and ball, a camera looking down at the table, and a HUD for the score.
+
+## What's in the box
+
+Here's what Rocco can do as of v0.5.0:
+
+- **Rendering.** PBR shading, a shadow-casting sun, a cubemap sky and tone mapping. It runs on Metal on macOS, OpenGL on Linux and Direct3D 11 on Windows, all from one shader source.
+- **A scene tree.** A scene is a tree of groups, draws, lights and colliders. Move a group and everything inside it comes along.
+- **Assets.** Load `.glb` models, textures, skies and sounds in packs, and unload them when you're done.
+- **Animation.** Skinned models play their animation clips on the GPU, and you can blend between two clips, like Pip fading from idle to walking.
+- **Collisions and queries.** Raycasts, overlaps and contacts. The engine tells you what touched what, and your game decides what that means. (There's no physics engine, though, so nothing gets pushed around unless you push it.)
+- **UI.** Boxes and text, laid out by [Clay](https://github.com/nicbarker/clay).
+- **Sound.** One-shot sounds and looping sounds, either of which can be placed in the world, through [miniaudio](https://miniaud.io/).
+- **Input.** Keyboard, mouse movement and up to four gamepads.
+- **Hot reload.** Change your code while the game runs, and it keeps going from where it was, as long as your `Model` type stays the same. (So far it's only tested on macOS.)
+- **Three desktop targets.** macOS arm64, Linux x64 and Windows x64. Each release ships the engine prebuilt for all three, so you don't need Odin or a C compiler.
+
+Animation is a nice example of how all this looks from the game's side. To pose Pip, the game just hands over the two clips, how far into each one it is, and how far it has faded from one to the other:
+
+```roc
+pip_pose : Model -> Pose
+pip_pose = |model| {
+    c = model.clips
+    a = model.animation
+    { clip: c.idle, time: a.idle_time, fade_clip: c.walk, fade_time: a.walk_time, fade: a.fade }
+}
+```
+
+The engine does the rest: it samples both clips, mixes them, and poses the mesh on the GPU, shadow included.
+
+## Kula
+
+To see if Rocco could hold up a real game, I've been building a clone of [Kula World](https://en.wikipedia.org/wiki/Kula_World), the PlayStation puzzle game from 1998. You roll a ball across a grid of blocks, and gravity turns whenever you roll over an edge. Collect every key, then roll into the exit. It's playable from start to finish across three textured levels, and it runs straight from the Rocco release bundles. You can find it at [Pixelsprout/kula](https://github.com/Pixelsprout/kula).
+
+## Try it out
+
+The best place to start is the [install page](/projects/rocco/docs/install/). It walks you through installing the right Roc nightly and running your first game. From there, the [tutorial](/projects/rocco/docs/tutorial/) builds Pip's little game one chapter at a time: an empty window, then a character, moving, lights, pickups, a door, a HUD, sound, gamepads and finally animation. The [API reference](/projects/rocco/api/) covers everything else.
+
+Rocco does have some clear limits right now, so it's worth knowing them up front:
+
+- It's desktop only, and you build on each OS you ship to.
+- There are no mouse buttons yet, just mouse movement.
+- There's no physics. You get collisions and queries, but your game moves things itself.
+- Roc changes quickly between nightlies, so each Rocco release pins one nightly, and you need that exact one.
+
+And of course, the source is all on [GitHub](https://github.com/Pixelsprout/rocco-engine).
+
+## What's next
+
+Next up is giving games control over their look: tone mapping, exposure, fog and shadow settings, all set from the scene. After that, the plan heads towards bigger worlds (instancing, culling, particles and a third-person controller) and towards making it easier for other people to build their own games, with things like pointer input, saves and a `rocco new` command.
 
 ## Wrapping up
 
 A lot of Rocco has been built with the help of agentic tools, and honestly, they're incredibly empowering for a solo developer. You can build a whole piece of software on your own! The big catch I see is that, like any tool, you have to know how to use it well. And to do that, you still need to understand the thing you're pointing the tool at.
 
-One thing that's helped a lot here is using dex to track the work. Rocco's roadmap is split into milestones, and each milestone is broken down into smaller tasks. It all lives right in the repo, so both the agents and I can see what's done and what's next.
+One thing that's helped a lot here is using dex to track the work. Rocco's roadmap is split into milestones, and each milestone is broken down into smaller tasks. It all lives right in the repo, so both the agents and I can see what's done and what's next. Another is the Bridge: a running game can be driven from a script, which can step it, press buttons and take screenshots. That lets an agent check its own work by actually playing the game.
 
-I also wanted that progress to be visible here on the devlog, so the site reads the dex task log straight from the Rocco repo. Every time the log changes, the site rebuilds itself. See the little pixel plant? It grows a new leaf for each finished milestone, and a milestone that's still open grows a bit more with every task I tick off. Posts are tagged with the milestone they belong to as well, so you can follow along one milestone at a time. If you want the full roadmap and a closer look at the plant, head over to the [Rocco project page](/projects/rocco/).
+I also wanted that progress to be visible here on the devlog, so the site reads the dex task log straight from the Rocco repo. Every time the log changes, the site rebuilds itself. See the little pixel plant? It grows a new leaf for each finished milestone, and a milestone that's still open grows a bit more with every task I tick off. If you want the full roadmap and a closer look at the plant, head over to the [Rocco project page](/projects/rocco/).
 
 Thanks for reading, and here's to watching the plant grow! 🌱
