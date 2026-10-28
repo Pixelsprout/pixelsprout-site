@@ -57,13 +57,14 @@ const toDate = (value: string | null | undefined): Date | null => (value ? new D
 const slugify = (name: string): string =>
   name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+// Gaps are allowed: the roadmap can drop or renumber a milestone.
 function checkNumbers(milestones: GardenEntry[]): void {
   milestones.forEach((m, index) => {
     const number = m.number!;
-    const expected = index + 1;
     if (number < 1) throw new DexError('Milestone numbers start at 1');
-    if (number < expected) throw new DexError(`Milestone ${number} appears more than once`);
-    if (number > expected) throw new DexError(`Milestone ${expected} is missing`);
+    if (index > 0 && number === milestones[index - 1].number) {
+      throw new DexError(`Milestone ${number} appears more than once`);
+    }
   });
 }
 

@@ -75,8 +75,8 @@ describe('parseDex', () => {
     expect(() => parseDex(withMilestones(1, 2, 2))).toThrow(/Milestone 2 appears more than once/);
   });
 
-  it('throws on a missing milestone number', () => {
-    expect(() => parseDex(withMilestones(1, 3))).toThrow(/Milestone 2 is missing/);
+  it('accepts a gap in the milestone numbers', () => {
+    expect(parseDex(withMilestones(1, 3)).map((e) => e.number)).toEqual([1, 3]);
   });
 
   it('throws on milestone 0', () => {
