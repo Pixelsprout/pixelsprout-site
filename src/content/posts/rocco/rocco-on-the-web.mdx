@@ -6,7 +6,7 @@ type: announcement
 draft: false
 ---
 
-Rocco can build your game for the browser! The same Roc game that runs natively compiles to WebAssembly and draws through WebGPU, and as of [v0.14.1](https://github.com/Pixelsprout/rocco-engine/releases/tag/v0.14.1) it takes two commands in your game's own folder. Here's one:
+Rocco can now build your game for the browser! Roc natively compiles to WebAssembly and Rocco draws through WebGPU, and as of [v0.14.1](https://github.com/Pixelsprout/rocco-engine/releases/tag/v0.14.1) it accepts two commands in your game's folder. Here's an example game below that you can play:
 
 <Game src="/devlog/rocco-on-the-web/play/index.html" poster="/devlog/rocco-on-the-web/poster.jpg" title="Orbweaver" caption="Orbweaver, running on Rocco in your browser." />
 
@@ -19,7 +19,7 @@ Rocco can build your game for the browser! The same Roc game that runs natively 
 | Space, after a level | Go on to the next level |
 | Escape | Quit |
 
-Orbweaver is a small game I made for this post, inspired by [Kula World](https://en.wikipedia.org/wiki/Kula_World) on the PlayStation. The levels, the look and the models are its own. A ball rolls over floating blocks at dusk, and when it rolls over an edge, gravity turns with it, so every face of a block is floor. Collect every key, then roll onto the exit. There are three short levels, and each one teaches a single move.
+Orbweaver is a small game I made for this post, inspired by [Kula World](https://en.wikipedia.org/wiki/Kula_World) on the PlayStation. A ball rolls over floating blocks at dusk, and when it rolls over an edge, gravity turns with it, so every face of a block is floor. Collect every key, then roll onto the exit. There are three short levels, and each one teaches a single move.
 
 ## Build your own
 
@@ -30,14 +30,14 @@ curl -LO https://github.com/Pixelsprout/rocco-engine/releases/download/v0.14.1/r
 python3 rocco_web.py
 ```
 
-You need Roc and Python 3, and that's it: no rocco checkout and no emscripten. The web host ships inside the platform bundle that Roc already downloaded for your game, so the script finds it there, builds the wasm and packs your `assets/` folder.
+Currently you need both the Roc compiler and Python 3 installed in your `PATH`. The web host ships inside the platform bundle that Roc already downloaded for your game, so the script finds it there, builds the wasm and packs your `assets/` folder.
 
-That writes `build/web/`, a folder you can serve from any static web server, and a zip that's ready for itch.io. A game can also bring its own page, with a Click to play screen or anything else, and the engine tells that page what's happening through a few `rocco:` events. The [web builds guide](/projects/rocco/docs/web/) covers all of it.
+That writes `build/web/`, a folder you can serve from any static web server, and a zip that's ready to publish on itch.io. A game can also bring its own page, with a Click to play screen or anything else, and the engine tells that page what's happening through a few `rocco:` events. The [web builds guide](/projects/rocco/docs/web/) covers all of it.
 
-## Limits
+## Current Limitations
 
 - **WebGPU only.** There's no WebGL fallback, because the clustered lights need storage buffers. Chrome and Edge have WebGPU, and Rocco is checked in Chrome.
-- **No gamepads.** A web build reads the keyboard only.
+- **No gamepads.** A web build reads the keyboard only. I hope to add support for gamepads on the web soon.
 - **No restart after Quit.** Once a game quits, the page has to reload to play again.
 - **No developer tools.** Shader reload, Spans, capture and GPU timing are native only.
 
