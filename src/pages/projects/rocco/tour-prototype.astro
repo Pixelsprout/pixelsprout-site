@@ -1,0 +1,279 @@
+---
+// PROTOTYPE (throwaway, branch prototype/tour-layout): three Tour step layouts on one route,
+// switchable via ?variant=A|B|C. Question: which layout, editor and nav should a Tour step use?
+// The Preview runs a prebuilt 02-character Web build; diagnostics are faked.
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/600.css';
+import '../../../styles/global.css';
+import '../../../styles/roc-docs.css';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { render } from 'astro:content';
+import { getDocs } from '../../../lib/content';
+import PrototypeSwitcher from '../../../components/PrototypeSwitcher.astro';
+
+const { pages } = await getDocs();
+const steps = pages.filter((p) => p.slug.startsWith('tutorial/')).sort((a, b) => a.order - b.order);
+const index = steps.findIndex((p) => p.slug.includes('02-character'));
+const step = steps[index];
+const { Content } = await render(step);
+const engine = process.env.DOCS_SOURCE ?? '../../playground/rocco-engine';
+const source = readFileSync(join(engine, 'examples/tutorial/02-character/main.roc'), 'utf8');
+const variants = [
+  { key: 'A', name: 'Gleam split' },
+  { key: 'B', name: 'Game first' },
+  { key: 'C', name: 'Editor focus' },
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tour prototype · pixelsprout</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    <div class="tour" data-variant="A">
+      <header class="topbar">
+        <a href="/projects/rocco" class="brand">rocco tour</a>
+        <ol class="dots">
+          {steps.map((s, i) => (
+            <li class:list={[{ done: i < index, here: i === index }]} title={s.title}>{i + 1}</li>
+          ))}
+        </ol>
+        <span class="count">Step {index + 1} of {steps.length}</span>
+      </header>
+
+      <article class="lesson prose">
+        <button class="drawer-toggle" type="button">Lesson</button>
+        <div class="lesson-body"><Content /></div>
+      </article>
+
+      <nav class="nav" aria-label="Tour steps">
+        {steps[index - 1] && <a class="prev" href="#">&lt; {steps[index - 1].title}</a>}
+        <details class="contents">
+          <summary>Contents</summary>
+          <ol>{steps.map((s, i) => <li class:list={[{ here: i === index }]}>{s.title}</li>)}</ol>
+        </details>
+        {steps[index + 1] && <a class="next" href="#">{steps[index + 1].title} &gt;</a>}
+      </nav>
+
+      <section class="editor-pane">
+        <div class="toolbar">
+          <span class="file">main.roc</span>
+          <span class="spacer"></span>
+          <button type="button" class="fake-error">Fake error</button>
+          <button type="button" class="reset">Reset</button>
+          <button type="button" class="answer">Show answer</button>
+          <button type="button" class="run">Run <kbd>⌘↵</kbd></button>
+        </div>
+        <div class="editor" data-source={source}></div>
+        <pre class="output">Press Run to check and start the game.</pre>
+      </section>
+
+      <section class="preview">
+        <div class="preview-bar">
+          <span>Preview</span>
+          <button type="button" class="expand">Expand</button>
+        </div>
+        <div class="stage">
+          <p class="note">Press Run to start the game.</p>
+        </div>
+      </section>
+    </div>
+    <PrototypeSwitcher variants={variants} />
+
+    <script>
+      import * as monaco from 'monaco-editor/editor/editor.api.js';
+      import EditorWorker from 'monaco-editor/editor/editor.worker.js?worker';
+      import { createHighlighter } from 'shiki';
+      import { shikiToMonaco } from '@shikijs/monaco';
+      import roc from '../../../grammars/roc.tmLanguage.json';
+      import { soil } from '../../../styles/soil-theme.mjs';
+
+      (self as any).MonacoEnvironment = { getWorker: () => new EditorWorker() };
+
+      const tour = document.querySelector<HTMLElement>('.tour')!;
+      const host = document.querySelector<HTMLElement>('.editor')!;
+      const output = document.querySelector<HTMLElement>('.output')!;
+      const stage = document.querySelector<HTMLElement>('.stage')!;
+      const start = host.dataset.source!;
+
+      document.addEventListener('proto:variant', (e) => (tour.dataset.variant = (e as CustomEvent).detail));
+      tour.dataset.variant = new URL(location.href).searchParams.get('variant') ?? 'A';
+
+      (async () => {
+      const t0 = performance.now();
+      const highlighter = await createHighlighter({ themes: [soil], langs: [{ ...(roc as any), name: 'roc' }] });
+      monaco.languages.register({ id: 'roc' });
+      shikiToMonaco(highlighter, monaco);
+      const editor = monaco.editor.create(host, {
+        value: start,
+        language: 'roc',
+        theme: 'soil',
+        automaticLayout: true,
+        minimap: { enabled: false },
+        fontFamily: 'IBM Plex Mono',
+        fontSize: 14,
+        scrollBeyondLastLine: false,
+        tabSize: 4,
+      });
+      console.log(`[prototype] Monaco + Shiki ready in ${Math.round(performance.now() - t0)} ms`);
+
+      // Fake checker: flags unbalanced brackets and a planted bad name, like `roc check` would.
+      let planted = false;
+      const check = () => {
+        const model = editor.getModel()!;
+        const text = model.getValue();
+        const markers: monaco.editor.IMarkerData[] = [];
+        for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}']]) {
+          const diff = text.split(open).length - text.split(close).length;
+          if (diff !== 0) {
+            const line = model.getLineCount();
+            markers.push({
+              severity: monaco.MarkerSeverity.Error,
+              message: `UNCLOSED ${open === '{' ? 'RECORD' : 'GROUP'}\n\nI found ${Math.abs(diff)} more ${diff > 0 ? open : close} than ${diff > 0 ? close : open}.`,
+              startLineNumber: line, startColumn: 1, endLineNumber: line, endColumn: model.getLineMaxColumn(line),
+            });
+          }
+        }
+        model.getLinesContent().forEach((l, i) => {
+          const col = l.indexOf('Draw.defualt');
+          if (col >= 0) markers.push({
+            severity: monaco.MarkerSeverity.Error,
+            message: 'UNRECOGNIZED NAME\n\nNothing is named `Draw.defualt` in this scope.\nDid you mean `Draw.default`?',
+            startLineNumber: i + 1, startColumn: col + 1, endLineNumber: i + 1, endColumn: col + 13,
+          });
+        });
+        monaco.editor.setModelMarkers(model, 'roc', markers);
+        return markers;
+      };
+
+      const run = () => {
+        const markers = check();
+        if (markers.length) {
+          output.textContent = markers.map((m) => `── ${m.message.split('\n')[0]} ─── main.roc:${m.startLineNumber}\n${m.message.split('\n').slice(2).join('\n')}`).join('\n\n');
+          output.dataset.state = 'error';
+          return;
+        }
+        output.textContent = 'Checked in 0.41 s (fake). Starting the game…';
+        output.dataset.state = 'ok';
+        stage.querySelector('iframe')?.remove();
+        if (!('gpu' in navigator)) {
+          stage.querySelector('.note')!.textContent = 'The Preview needs WebGPU (Chrome or Edge 113+).';
+          return;
+        }
+        const frame = document.createElement('iframe');
+        frame.title = 'Preview';
+        frame.allow = 'autoplay; fullscreen';
+        frame.src = '/tour-prototype/02-character/index.html';
+        frame.addEventListener('load', () => {
+          frame.contentWindow?.addEventListener('rocco:ready', () => {
+            output.textContent = 'Checked in 0.41 s (fake). Running.';
+            frame.focus();
+          });
+        });
+        stage.append(frame);
+      };
+
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, run);
+      document.querySelector('.run')!.addEventListener('click', run);
+      document.querySelector('.reset')!.addEventListener('click', () => { editor.setValue(start); check(); });
+      document.querySelector('.answer')!.addEventListener('click', () => { editor.setValue(start); check(); });
+      document.querySelector('.fake-error')!.addEventListener('click', () => {
+        planted = !planted;
+        const model = editor.getModel()!;
+        const v = model.getValue();
+        editor.setValue(planted ? v.replace('Draw.default', 'Draw.defualt') + '\n# oops (' : start);
+        run();
+      });
+      document.querySelector('.expand')!.addEventListener('click', () => tour.classList.toggle('preview-big'));
+      document.querySelector('.drawer-toggle')!.addEventListener('click', () => tour.classList.toggle('drawer-open'));
+      })();
+    </script>
+
+    <style is:global>
+      html, body { height: 100%; overflow: hidden; }
+      .tour { height: 100vh; display: grid; gap: 1px; background: var(--edge); }
+      .tour > * { background: var(--soil); min-width: 0; min-height: 0; }
+      .topbar { display: flex; align-items: center; gap: 16px; padding: 0 16px; background: var(--soil-bar); }
+      .brand { font-family: var(--font-pixel); font-size: 24px; color: var(--sprout); }
+      .dots { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; }
+      .dots li { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; border: 1px solid var(--edge); color: var(--text-faint); }
+      .dots li.done { background: var(--soil-raised); color: var(--sprout); }
+      .dots li.here { border-color: var(--sprout); color: var(--soil); background: var(--sprout); }
+      .count { margin-left: auto; color: var(--text-muted); font-size: 13px; }
+      .lesson { overflow: auto; padding: 24px 32px; font-size: 15px; }
+      .lesson h1 { font-size: 40px; margin-bottom: 16px; }
+      .drawer-toggle { display: none; }
+      .nav { display: flex; align-items: center; gap: 12px; padding: 10px 16px; font-size: 14px; background: var(--soil-bar); }
+      .nav .next { margin-left: auto; }
+      .contents { position: relative; }
+      .contents summary { cursor: pointer; color: var(--text-muted); }
+      .contents ol { position: absolute; bottom: 28px; left: 0; width: 320px; background: var(--soil-raised); border: 1px solid var(--edge); padding: 12px 12px 12px 32px; margin: 0; z-index: 5; }
+      .contents li.here { color: var(--sprout); }
+      .editor-pane { display: grid; grid-template-rows: auto 1fr auto; }
+      .toolbar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: var(--soil-bar); font-size: 13px; }
+      .toolbar .spacer { flex: 1; }
+      .toolbar button, .preview-bar button, .drawer-toggle { font: inherit; font-size: 13px; background: var(--soil-raised); color: var(--text); border: 1px solid var(--edge); padding: 3px 10px; cursor: pointer; }
+      .toolbar .run { background: var(--sprout); color: var(--soil); border-color: var(--sprout); font-weight: 600; }
+      .toolbar kbd { font: inherit; opacity: 0.7; }
+      .editor { min-height: 0; }
+      .output { margin: 0; max-height: 9em; overflow: auto; padding: 8px 12px; font-size: 12px; background: var(--soil-deep); color: var(--text-muted); white-space: pre-wrap; border-top: 1px solid var(--edge); }
+      .output[data-state='error'] { color: var(--clay); }
+      .output[data-state='ok'] { color: var(--sprout); }
+      .preview { display: grid; grid-template-rows: auto 1fr; }
+      .preview-bar { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; background: var(--soil-bar); font-size: 13px; }
+      .stage { position: relative; background: #000; display: grid; place-items: center; }
+      .stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+      .stage .note { color: var(--text-muted); }
+
+      /* A: Gleam split. Lesson + nav left; editor over preview right. */
+      .tour[data-variant='A'] {
+        grid-template-columns: minmax(360px, 2fr) 3fr;
+        grid-template-rows: 1fr auto auto;
+        grid-template-areas: 'lesson editor' 'lesson preview' 'nav preview';
+      }
+      .tour[data-variant='A'] .topbar { display: none; }
+      .tour[data-variant='A'] .lesson { grid-area: lesson; }
+      .tour[data-variant='A'] .nav { grid-area: nav; }
+      .tour[data-variant='A'] .editor-pane { grid-area: editor; }
+      .tour[data-variant='A'] .preview { grid-area: preview; height: 38vh; }
+      .tour[data-variant='A'].preview-big .preview { height: 70vh; }
+
+      /* B: Game first. Step dots on top; editor left; big preview right with the lesson under it. */
+      .tour[data-variant='B'] {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto 1fr auto;
+        grid-template-areas: 'top top' 'editor preview' 'editor lesson' 'editor nav';
+      }
+      .tour[data-variant='B'] .topbar { grid-area: top; height: 44px; }
+      .tour[data-variant='B'] .editor-pane { grid-area: editor; }
+      .tour[data-variant='B'] .preview { grid-area: preview; aspect-ratio: 16 / 9; }
+      .tour[data-variant='B'] .lesson { grid-area: lesson; }
+      .tour[data-variant='B'] .nav { grid-area: nav; }
+
+      /* C: Editor focus. Editor fills the screen; lesson is a drawer; preview floats. */
+      .tour[data-variant='C'] {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas: 'top top' 'lesson editor' 'nav nav';
+      }
+      .tour[data-variant='C'] .topbar { grid-area: top; height: 44px; }
+      .tour[data-variant='C'] .lesson { grid-area: lesson; width: 52px; overflow: hidden; padding: 12px 8px; }
+      .tour[data-variant='C'] .lesson .lesson-body { display: none; }
+      .tour[data-variant='C'] .drawer-toggle { display: block; writing-mode: vertical-rl; padding: 10px 3px; }
+      .tour[data-variant='C'].drawer-open .lesson { width: 440px; overflow: auto; padding: 16px 24px; }
+      .tour[data-variant='C'].drawer-open .lesson .lesson-body { display: block; }
+      .tour[data-variant='C'].drawer-open .drawer-toggle { writing-mode: horizontal-tb; margin-bottom: 12px; }
+      .tour[data-variant='C'] .editor-pane { grid-area: editor; }
+      .tour[data-variant='C'] .nav { grid-area: nav; }
+      .tour[data-variant='C'] .preview {
+        position: fixed; right: 20px; bottom: 76px; width: 420px; aspect-ratio: 16 / 10; z-index: 20;
+        border: 1px solid var(--edge); box-shadow: 0 10px 30px rgb(0 0 0 / 0.6);
+      }
+      .tour[data-variant='C'].preview-big .preview { width: 60vw; }
+    </style>
+  </body>
+</html>
