@@ -118,6 +118,9 @@ const variants = [
         fontSize: 14,
         scrollBeyondLastLine: false,
         tabSize: 4,
+        // Keyboard-shortcut extensions (Vimium and similar) don't treat an EditContext div as editable,
+        // so they swallow keys. The hidden textarea keeps typing working for those readers.
+        editContext: false,
       });
       console.log(`[prototype] Monaco + Shiki ready in ${Math.round(performance.now() - t0)} ms`);
 
