@@ -1,0 +1,138 @@
+---
+type Props = { src: string; poster: string; title: string; caption?: string };
+const { src, poster, title, caption } = Astro.props;
+---
+<figure class="game" data-src={src} data-title={title}>
+  <div class="stage">
+    <img class="poster" src={poster} alt={`${title}: the start of level 1`} loading="lazy" />
+    <div class="screen">
+      <button class="play" type="button">Click to play</button>
+      <p class="note" hidden></p>
+    </div>
+  </div>
+  <div class="bar">
+    {caption && <figcaption>{caption}</figcaption>}
+    <button class="fullscreen" type="button" hidden>Fullscreen</button>
+  </div>
+</figure>
+
+<script>
+  // The game page owns its whole document (window.Module, document.title, key listeners),
+  // so it runs in a same-origin iframe and reports back through events on the iframe's window.
+  const touchOnly = matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+  for (const game of document.querySelectorAll<HTMLElement>('.game')) {
+    const stage = game.querySelector<HTMLElement>('.stage')!;
+    const screen = game.querySelector<HTMLElement>('.screen')!;
+    const play = game.querySelector<HTMLButtonElement>('.play')!;
+    const note = game.querySelector<HTMLElement>('.note')!;
+    const fullscreen = game.querySelector<HTMLButtonElement>('.fullscreen')!;
+    let frame: HTMLIFrameElement | null = null;
+
+    const show = (text: string | null, button: string | null) => {
+      screen.hidden = false;
+      note.hidden = text === null;
+      note.textContent = text ?? '';
+      play.hidden = button === null;
+      play.textContent = button ?? '';
+    };
+
+    const stop = (text: string) => {
+      frame?.remove();
+      frame = null;
+      fullscreen.hidden = true;
+      show(text, null);
+    };
+
+    const listen = () => {
+      const view = frame?.contentWindow;
+      if (!view) return;
+      // sokol cancels mousedown on the canvas, so a click never gives the iframe focus back.
+      view.addEventListener('pointerdown', () => frame?.focus(), true);
+      view.addEventListener('rocco:ready', () => {
+        screen.hidden = true;
+        frame?.focus();
+      });
+      view.addEventListener('rocco:unsupported', (event) => stop((event as CustomEvent).detail.message));
+      view.addEventListener('rocco:stopped', (event) => stop((event as CustomEvent).detail.message));
+      view.addEventListener('rocco:quit', () => show(null, 'Play again'));
+    };
+
+    const start = () => {
+      show('Loading', null);
+      if (frame) {
+        frame.contentWindow?.location.reload();
+        return;
+      }
+      frame = document.createElement('iframe');
+      frame.title = game.dataset.title ?? 'Game';
+      frame.allow = 'autoplay; fullscreen';
+      // Listeners go on at each load, because a reload gives the iframe a new window.
+      frame.addEventListener('load', listen);
+      frame.src = game.dataset.src!;
+      stage.append(frame);
+      fullscreen.hidden = false;
+    };
+
+    if (touchOnly) {
+      show('Play on desktop: the game needs a keyboard.', null);
+    } else if (!('gpu' in navigator)) {
+      // rocco.js reports a missing WebGPU before the iframe's load event, so check here first.
+      show('This game needs WebGPU. Try a recent Chrome or Edge on a desktop.', null);
+    } else {
+      play.addEventListener('click', start);
+    }
+
+    fullscreen.addEventListener('click', () => {
+      frame?.requestFullscreen().then(() => frame?.focus());
+    });
+  }
+</script>
+
+<style>
+  .game { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .stage {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--soil-deep);
+    border: 1px solid var(--edge);
+    overflow: hidden;
+  }
+  .poster, .stage :global(iframe) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .poster { object-fit: cover; }
+  .screen {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgb(18 13 10 / 0.55);
+    text-align: center;
+  }
+  .screen[hidden] { display: none; }
+  .play, .fullscreen {
+    font: inherit;
+    color: var(--soil-deep);
+    background: var(--sprout);
+    border: 0;
+    padding: 8px 20px;
+    cursor: pointer;
+  }
+  .play { font-family: var(--font-pixel); font-size: 28px; line-height: 1.2; }
+  .play:hover, .fullscreen:hover { background: var(--clay); }
+  .play[hidden], .fullscreen[hidden] { display: none; }
+  .note { margin: 0; max-width: 40ch; color: var(--text); }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .fullscreen { font-size: 12px; padding: 4px 12px; margin-left: auto; }
+  figcaption { font-size: 12px; color: var(--text-muted); }
+</style>

@@ -3,6 +3,7 @@ import { render } from 'astro:content';
 import PostLayout from '../../layouts/Post.astro';
 import Check from '../../components/Check.astro';
 import Figure from '../../components/Figure.astro';
+import Game from '../../components/Game.astro';
 import { getGarden, getPosts } from '../../lib/content';
 import { previousPublished, slugOf } from '../../lib/post-meta';
 
@@ -18,5 +19,5 @@ const { post, newer, older, previous, garden } = Astro.props;
 const { Content, headings } = await render(post);
 ---
 <PostLayout post={post} headings={headings} older={older} newer={newer} previous={previous} garden={garden}>
-  <Content components={{ Check, Figure }} />
+  <Content components={{ Check, Figure, Game }} />
 </PostLayout>
