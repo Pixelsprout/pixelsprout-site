@@ -12,9 +12,12 @@ import {
   githubApi,
   rawUrl,
   requester,
+  type ApiGet,
   type FetchLike,
+  type Request,
 } from './github';
 import { readTarGz, type TarFile } from './tar';
+import { TOUR_ASSET, readReleaseTour, readTourCheckout, type TourSource } from './tour-source';
 
 export type DocsFile = TarFile;
 
@@ -70,23 +73,18 @@ function parseMarkers(data: Uint8Array, tag: string): Markers {
   return markers as Markers;
 }
 
-type Release = { tag_name?: unknown; assets?: { name?: unknown; browser_download_url?: unknown }[] };
+type Asset = { name?: unknown; browser_download_url?: unknown };
+type Release = { tag_name?: unknown; assets?: Asset[] };
 type Tree = { truncated?: boolean; tree?: { path: string; type: string }[] };
 
-// "latest" skips prereleases, so a release that failed its bundle test never feeds the site.
-async function readRelease(options: DocsSourceOptions): Promise<DocsSource> {
-  assertToken(options);
-  const request = requester(options.fetch, options.timeoutMs);
-  const get = githubApi(request, options.token);
+const assetUrl = (assets: Asset[], name: string) => {
+  const url = assets.find((asset) => asset.name === name)?.browser_download_url;
+  return typeof url === 'string' ? url : undefined;
+};
 
-  const latest = await get('releases/latest');
-  if (latest.res.status === 404) return { kind: 'none', origin: REPO, reason: `${REPO} has no release` };
-  if (!latest.res.ok) throw apiError(latest.url, latest.res.status);
-  const { tag_name: tag, assets = [] } = (await latest.res.json()) as Release;
-  if (typeof tag !== 'string') throw new SourceError(`GET ${latest.url} returned no tag_name`);
+async function readReleaseDocs(request: Request, get: ApiGet, tag: string, download: string | undefined): Promise<DocsSource> {
   const origin = `${REPO}@${tag}`;
-  const download = assets.find((asset) => asset.name === DOCS_ASSET)?.browser_download_url;
-  if (typeof download !== 'string') return { kind: 'none', origin, reason: `the latest release ${tag} has no ${DOCS_ASSET}` };
+  if (!download) return { kind: 'none', origin, reason: `the latest release ${tag} has no ${DOCS_ASSET}` };
 
   const tree = await get(`git/trees/${encodeURIComponent(tag)}?recursive=1`);
   if (!tree.res.ok) throw apiError(tree.url, tree.res.status);
@@ -112,6 +110,34 @@ async function readRelease(options: DocsSourceOptions): Promise<DocsSource> {
   };
 }
 
-export function readDocsSource(options: DocsSourceOptions = {}): Promise<DocsSource> {
-  return options.source ? readCheckout(options.source) : readRelease(options);
+// "latest" skips prereleases, so a release that failed its bundle test never feeds the site.
+async function readRelease(options: DocsSourceOptions): Promise<RoccoSources> {
+  assertToken(options);
+  const request = requester(options.fetch, options.timeoutMs);
+  const get = githubApi(request, options.token);
+
+  const latest = await get('releases/latest');
+  if (latest.res.status === 404) {
+    const reason = `${REPO} has no release`;
+    return { docs: { kind: 'none', origin: REPO, reason }, tour: { kind: 'none', reason } };
+  }
+  if (!latest.res.ok) throw apiError(latest.url, latest.res.status);
+  const { tag_name: tag, assets = [] } = (await latest.res.json()) as Release;
+  if (typeof tag !== 'string') throw new SourceError(`GET ${latest.url} returned no tag_name`);
+  const [docs, tour] = await Promise.all([
+    readReleaseDocs(request, get, tag, assetUrl(assets, DOCS_ASSET)),
+    readReleaseTour(request, tag, assetUrl(assets, TOUR_ASSET)),
+  ]);
+  return { docs, tour };
+}
+
+export type RoccoSources = { docs: DocsSource; tour: TourSource };
+
+export async function readRoccoSources(options: DocsSourceOptions = {}): Promise<RoccoSources> {
+  if (!options.source) return readRelease(options);
+  return { docs: await readCheckout(options.source), tour: await readTourCheckout(options.source) };
+}
+
+export async function readDocsSource(options: DocsSourceOptions = {}): Promise<DocsSource> {
+  return (await readRoccoSources(options)).docs;
 }
