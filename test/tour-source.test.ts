@@ -91,7 +91,7 @@ describe('the Tour artifacts from the latest release', () => {
 
   it('fails on a tour.tar.gz that does not extract', async () => {
     const { fetch } = fakeFetch(release(new TextEncoder().encode('not a tarball')));
-    await expect(readRoccoSources({ fetch })).rejects.toThrow(/The tour\.tar\.gz of v0\.2\.0 does not extract: /);
+    await expect(readRoccoSources({ fetch })).rejects.toThrow(/Cannot extract the tour\.tar\.gz of v0\.2\.0: /);
   });
 
   it('fails on a tour.tar.gz with no manifest.json', async () => {

@@ -43,7 +43,7 @@ export async function readReleaseTour(request: Request, tag: string, download: s
   try {
     files = readTarGz(tarball).sort(byPath);
   } catch (error) {
-    throw new SourceError(`The ${TOUR_ASSET} of ${tag} does not extract: ${errorMessage(error)}`);
+    throw new SourceError(`Cannot extract ${where}: ${errorMessage(error)}`);
   }
   const buildInfo = readBuildInfo(files, where);
   if (buildInfo.tag !== tag) throw new SourceError(`The manifest.json in ${where} has the tag ${buildInfo.tag}, not ${tag}`);
