@@ -41,11 +41,20 @@ export type PreviewPort = {
   remove(): void;
 };
 
-export type PreviewState = 'unsupported' | 'starting' | 'running' | 'last-good';
+export type PreviewState = 'unsupported' | 'starting' | 'running' | 'last-good' | 'crashed' | 'stopped' | 'stale';
+
+export type ConsoleKind = 'dbg' | 'expect' | 'crash' | 'stopped';
+
+// The card over the Preview. stale: the deployed Tour changed under this page, and only a reload helps.
+export type Card = { kind: 'crashed' | 'stopped'; message: string } | { kind: 'stale' };
 
 export type RunEvent =
   | { type: 'problems'; problems: Problem[]; internal: string | null }
   | { type: 'preview'; state: PreviewState }
+  // count 1 adds a line. A higher count is an identical repeat of the last line.
+  | { type: 'console'; kind: ConsoleKind; text: string; count: number }
+  | { type: 'console-cleared' }
+  | { type: 'card'; card: Card | null }
   | { type: 'output'; message: PreviewToPage };
 
 export type RunHost = {
@@ -62,10 +71,15 @@ export type RunController = {
   run(source: string, options: RunOptions): void;
   fromWorker(message: WorkerMessage): void;
   fromWindow(source: unknown, data: unknown): void;
+  // Starts the newest image again from init in a new Preview.
+  restart(): void;
+  clearConsole(): void;
+  // The page is older than the deployed Tour. Never reload by itself: a stale cache would loop.
+  stale(): void;
 };
 
 type Image = { image: ArrayBuffer; identity: Identity };
-type Preview = { port: PreviewPort; waiting: boolean; image: Image | null; sent: boolean; focus: boolean };
+type Preview = { port: PreviewPort; waiting: boolean; image: Image | null; sent: boolean; focus: boolean; ended: boolean };
 
 export function runController(host: RunHost): RunController {
   let nextId = 1;
@@ -74,10 +88,12 @@ export function runController(host: RunHost): RunController {
   // The Preview on screen, and the newest Preview. They differ while a new Preview starts.
   let shown: Preview | null = null;
   let latest: Preview | null = null;
+  let isStale = false;
+  let lastLine: { kind: ConsoleKind; text: string; count: number } | null = null;
 
   const newPreview = (): Preview | null => {
     if (!host.createPreview) return null;
-    return { port: host.createPreview(), waiting: false, image: null, sent: false, focus: false };
+    return { port: host.createPreview(), waiting: false, image: null, sent: false, focus: false, ended: false };
   };
 
   // The controller keeps the original, so a later Preview can start from the same image.
@@ -99,6 +115,7 @@ export function runController(host: RunHost): RunController {
   };
 
   const launch = (image: Image, focus: boolean) => {
+    if (isStale) return;
     // A prewarmed Preview with no image yet takes this one. A Preview that has an image starts nothing new.
     if (!latest || latest.image) {
       if (latest && latest !== shown) latest.port.remove();
@@ -117,6 +134,21 @@ export function runController(host: RunHost): RunController {
     preview.port.show();
     if (preview.focus) preview.port.focus();
     host.emit({ type: 'preview', state: 'running' });
+    host.emit({ type: 'card', card: null });
+  };
+
+  const log = (kind: ConsoleKind, text: string) => {
+    if (lastLine && lastLine.kind === kind && lastLine.text === text) lastLine.count++;
+    else lastLine = { kind, text, count: 1 };
+    host.emit({ type: 'console', ...lastLine });
+  };
+
+  const stale = () => {
+    if (isStale) return;
+    isStale = true;
+    if (latest && latest !== shown) latest.port.remove();
+    host.emit({ type: 'preview', state: 'stale' });
+    host.emit({ type: 'card', card: { kind: 'stale' } });
   };
 
   const problems = (reports: string, internal: string | null = null) =>
@@ -148,18 +180,42 @@ export function runController(host: RunHost): RunController {
       } else {
         if (message.kind === 'internal') problems('', message.reports);
         else problems(message.reports);
-        if (shown) host.emit({ type: 'preview', state: 'last-good' });
+        if (shown && !isStale && !latest?.ended) host.emit({ type: 'preview', state: 'last-good' });
       }
+    },
+    restart() {
+      if (latest?.image) launch(latest.image, true);
+    },
+    stale,
+    clearConsole() {
+      lastLine = null;
+      host.emit({ type: 'console-cleared' });
     },
     fromWindow(source, data) {
       const preview = latest;
-      if (!preview || source !== preview.port.source || typeof (data as { type?: unknown } | null)?.type !== 'string') return;
+      if (isStale || !preview || source !== preview.port.source || typeof (data as { type?: unknown } | null)?.type !== 'string') return;
       const message = data as PreviewToPage;
       if (message.type === 'tour:waiting') {
         preview.waiting = true;
         send(preview);
       } else if (message.type === 'rocco:ready') {
         ready(preview);
+      } else if (message.type === 'tour:dbg' || message.type === 'tour:expect') {
+        log(message.type === 'tour:dbg' ? 'dbg' : 'expect', message.text);
+      } else if (message.type === 'tour:crash') {
+        preview.ended = true;
+        log('crash', message.message);
+        host.emit({ type: 'preview', state: 'crashed' });
+        host.emit({ type: 'card', card: { kind: 'crashed', message: message.message } });
+      } else if (message.type === 'tour:bad-image') {
+        stale();
+      } else if (message.type === 'rocco:stopped' || message.type === 'rocco:unsupported') {
+        // A crash can be followed by rocco:stopped; the crash card stays.
+        if (preview.ended) return;
+        preview.ended = true;
+        log('stopped', message.message);
+        host.emit({ type: 'preview', state: 'stopped' });
+        host.emit({ type: 'card', card: { kind: 'stopped', message: message.message } });
       } else {
         host.emit({ type: 'output', message });
       }

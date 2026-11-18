@@ -56,7 +56,27 @@ function setup({ webgpu = true } = {}) {
   const failed = (reports: string, id = requests.at(-1)!.id) => worker({ type: 'failed', id, kind: 'compile', reports, stats: {} });
   const from = (preview: FakePreview, data: unknown) => controller.fromWindow(preview.source, data);
   const imagesSent = (preview: FakePreview) => preview.posts.filter((p) => (p.message as { type: string }).type === 'tour:image');
-  return { controller, requests, previews, events, compiled, failed, from, imagesSent, worker };
+  // A Preview that runs the starting source.
+  const running = () => {
+    controller.start('app [stub]');
+    const preview = previews.at(-1)!;
+    from(preview, { type: 'tour:waiting' });
+    compiled();
+    from(preview, { type: 'rocco:ready' });
+    return preview;
+  };
+  // The Console as the page shows it: a count above 1 updates the last line.
+  const consoleLines = () => {
+    const lines: { kind: string; text: string; count: number }[] = [];
+    for (const event of events) {
+      if (event.type === 'console-cleared') lines.length = 0;
+      if (event.type !== 'console') continue;
+      if (event.count > 1) lines.at(-1)!.count = event.count;
+      else lines.push({ kind: event.kind, text: event.text, count: 1 });
+    }
+    return lines;
+  };
+  return { controller, requests, previews, events, compiled, failed, from, imagesSent, worker, running, consoleLines };
 }
 
 const twoErrors = readFileSync(new URL('fixtures/tour-reports/two-errors.txt', import.meta.url), 'utf8');
@@ -178,7 +198,7 @@ describe('runController', () => {
     t.compiled([1]);
     t.from(first, { type: 'rocco:ready' });
     t.from(first, { type: 'tour:dbg', text: '"tick"' });
-    expect(t.events).toContainEqual({ type: 'output', message: { type: 'tour:dbg', text: '"tick"' } });
+    expect(t.consoleLines()).toEqual([{ kind: 'dbg', text: '"tick"', count: 1 }]);
 
     t.controller.run('app [edited]', { focus: true });
     t.compiled([2]);
@@ -195,7 +215,7 @@ describe('runController', () => {
 
     t.from(second, { type: 'tour:waiting' });
     t.from(second, { type: 'tour:crash', message: 'boom' });
-    expect(t.events.at(-1)).toEqual({ type: 'output', message: { type: 'tour:crash', message: 'boom' } });
+    expect(t.consoleLines().at(-1)).toEqual({ kind: 'crash', text: 'boom', count: 1 });
   });
 
   it('makes no Preview without WebGPU, and Run still publishes problems', () => {
@@ -209,5 +229,135 @@ describe('runController', () => {
     expect(t.events.filter((e) => e.type === 'problems').at(-1)).toMatchObject({ problems: [{ line: 34 }, { line: 29 }] });
     expect(t.events.filter((e) => e.type === 'preview')).toEqual([{ type: 'preview', state: 'unsupported' }]);
   });
-});
 
+  it('writes dbg and expect output to the Console and collapses identical repeats', () => {
+    const t = setup();
+    const preview = t.running();
+    t.from(preview, { type: 'tour:dbg', text: '"tick"' });
+    t.from(preview, { type: 'tour:dbg', text: '"tick"' });
+    t.from(preview, { type: 'tour:dbg', text: '"tick"' });
+    t.from(preview, { type: 'tour:expect', text: 'expect failed' });
+    t.from(preview, { type: 'tour:dbg', text: '"tick"' });
+    expect(t.consoleLines()).toEqual([
+      { kind: 'dbg', text: '"tick"', count: 3 },
+      { kind: 'expect', text: 'expect failed', count: 1 },
+      { kind: 'dbg', text: '"tick"', count: 1 },
+    ]);
+  });
+
+  it('empties the Console on Clear, so the next repeat starts a new line', () => {
+    const t = setup();
+    const preview = t.running();
+    t.from(preview, { type: 'tour:dbg', text: '1' });
+    t.from(preview, { type: 'tour:dbg', text: '1' });
+    t.controller.clearConsole();
+    expect(t.consoleLines()).toEqual([]);
+    t.from(preview, { type: 'tour:dbg', text: '1' });
+    expect(t.consoleLines()).toEqual([{ kind: 'dbg', text: '1', count: 1 }]);
+  });
+
+  it('shows a crash as a card and a Console line, and the next Run starts a new Preview that clears the card', () => {
+    const t = setup();
+    const first = t.running();
+    t.from(first, { type: 'tour:crash', message: 'boom' });
+    expect(t.events.filter((e) => e.type === 'card').at(-1)).toEqual({ type: 'card', card: { kind: 'crashed', message: 'boom' } });
+    expect(t.events.filter((e) => e.type === 'preview').at(-1)).toEqual({ type: 'preview', state: 'crashed' });
+    expect(t.consoleLines()).toEqual([{ kind: 'crash', text: 'boom', count: 1 }]);
+    expect(first.removed).toBe(false);
+
+    t.controller.run('app [fixed]', { focus: true });
+    t.compiled([9]);
+    const second = t.previews.at(-1)!;
+    expect(second).not.toBe(first);
+    t.from(second, { type: 'tour:waiting' });
+    t.from(second, { type: 'rocco:ready' });
+    expect(first.removed).toBe(true);
+    expect(t.events.filter((e) => e.type === 'card').at(-1)).toEqual({ type: 'card', card: null });
+    expect(t.events.filter((e) => e.type === 'preview').at(-1)).toEqual({ type: 'preview', state: 'running' });
+  });
+
+  it('shows a stopped Preview as a card and a Console line, but not after a crash', () => {
+    const t = setup();
+    const preview = t.running();
+    t.from(preview, { type: 'rocco:stopped', reason: 'abort', message: 'The game stopped: oom' });
+    expect(t.events.filter((e) => e.type === 'card').at(-1)).toEqual({ type: 'card', card: { kind: 'stopped', message: 'The game stopped: oom' } });
+    expect(t.consoleLines()).toEqual([{ kind: 'stopped', text: 'The game stopped: oom', count: 1 }]);
+
+    const u = setup();
+    const crashed = u.running();
+    u.from(crashed, { type: 'tour:crash', message: 'boom' });
+    u.from(crashed, { type: 'rocco:stopped', reason: 'exit', message: 'The game stopped with exit code 1.' });
+    expect(u.events.filter((e) => e.type === 'card').at(-1)).toEqual({ type: 'card', card: { kind: 'crashed', message: 'boom' } });
+    expect(u.consoleLines()).toEqual([{ kind: 'crash', text: 'boom', count: 1 }]);
+  });
+
+  it('restarts the current image in a new Preview without a message to the old one or a compile', () => {
+    const t = setup();
+    const first = t.running();
+    t.from(first, { type: 'tour:crash', message: 'boom' });
+    const compiles = t.requests.length;
+    const postsToFirst = first.posts.length;
+
+    t.controller.restart();
+    expect(t.requests).toHaveLength(compiles);
+    expect(first.posts).toHaveLength(postsToFirst);
+    expect(t.previews).toHaveLength(2);
+    const second = t.previews[1];
+    t.from(second, { type: 'tour:waiting' });
+    expect(t.imagesSent(second).map(bytesOf)).toEqual([[1, 2, 3]]);
+    t.from(second, { type: 'rocco:ready' });
+    expect(first.removed).toBe(true);
+    expect(second.focused).toBe(true);
+    expect(t.events.filter((e) => e.type === 'card').at(-1)).toEqual({ type: 'card', card: null });
+  });
+
+  it('does nothing on Restart before the first image', () => {
+    const t = setup();
+    t.controller.start('app [stub]');
+    t.controller.restart();
+    expect(t.previews).toHaveLength(1);
+  });
+
+  it('asks the reader to reload on tour:bad-image, and starts no Preview after that', () => {
+    const t = setup();
+    t.controller.start('app [stub]');
+    const [preview] = t.previews;
+    t.from(preview, { type: 'tour:waiting' });
+    t.compiled();
+    t.from(preview, { type: 'tour:bad-image', reason: 'build', message: 'The image is from build X, and this Preview is build Y.' });
+    expect(t.events.filter((e) => e.type === 'card').at(-1)).toEqual({ type: 'card', card: { kind: 'stale' } });
+    expect(t.events.filter((e) => e.type === 'preview').at(-1)).toEqual({ type: 'preview', state: 'stale' });
+
+    t.controller.restart();
+    t.controller.run('app [edited]', { focus: true });
+    t.compiled([2]);
+    expect(t.previews).toHaveLength(1);
+
+    t.controller.run('app [broken]', { focus: true });
+    t.failed(twoErrors);
+    expect(t.events.filter((e) => e.type === 'problems').at(-1)).toMatchObject({ problems: [{ line: 34 }, { line: 29 }] });
+    expect(t.events.filter((e) => e.type === 'card').at(-1)).toEqual({ type: 'card', card: { kind: 'stale' } });
+  });
+
+  it('keeps the reload notice when the page finds a missing file while a Preview starts', () => {
+    const t = setup();
+    const first = t.running();
+    t.controller.run('app [edited]', { focus: true });
+    t.compiled([2]);
+    const second = t.previews[1];
+    t.controller.stale();
+    t.from(second, { type: 'tour:waiting' });
+    t.from(second, { type: 'rocco:ready' });
+    expect(t.events.filter((e) => e.type === 'card').at(-1)).toEqual({ type: 'card', card: { kind: 'stale' } });
+    expect(first.removed).toBe(false);
+  });
+
+  it('keeps the crashed status when a later edit fails to compile', () => {
+    const t = setup();
+    const preview = t.running();
+    t.from(preview, { type: 'tour:crash', message: 'boom' });
+    t.controller.run('app [broken]', { focus: true });
+    t.failed(twoErrors);
+    expect(t.events.filter((e) => e.type === 'preview').at(-1)).toEqual({ type: 'preview', state: 'crashed' });
+  });
+});
