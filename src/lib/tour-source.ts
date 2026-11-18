@@ -50,7 +50,7 @@ export async function readTourCheckout(source: string): Promise<TourSource> {
   const where = join(source, 'build/tour');
   const folder = join(expandHome(source), 'build/tour');
   const exists = await stat(folder).then((info) => info.isDirectory(), () => false);
-  if (!exists) return { kind: 'none', reason: `${where} does not exist. Build the Tour artifacts in the checkout.` };
+  if (!exists) return { kind: 'none', reason: `${where} does not exist` };
   const files = await readFolder(folder, '');
   return { kind: 'tour', origin: where, manifest: readManifest(files, where), files };
 }

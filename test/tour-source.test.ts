@@ -142,7 +142,7 @@ describe('the Tour artifacts from DOCS_SOURCE', () => {
   it('says the Tour is not available when the checkout has no build/tour/', async () => {
     const dir = await checkout({});
     const { tour } = await readRoccoSources({ source: dir });
-    expect(tour).toEqual({ kind: 'none', reason: `${dir}/build/tour does not exist. Build the Tour artifacts in the checkout.` });
+    expect(tour).toEqual({ kind: 'none', reason: `${dir}/build/tour does not exist` });
   });
 
   it('fails on a build/tour/ with no manifest.json', async () => {
