@@ -1,4 +1,7 @@
 import { readFileSync } from 'node:fs';
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { readRoccoSources } from '../src/lib/docs-source';
@@ -110,5 +113,48 @@ describe('the Tour artifacts from the latest release', () => {
         'The manifest.json in the tour.tar.gz of v0.2.0 is not an object with the strings buildId, tag and rocNightly',
       );
     }
+  });
+});
+
+describe('the Tour artifacts from DOCS_SOURCE', () => {
+  const CHECKOUT = new URL('fixtures/rocco', import.meta.url).pathname;
+
+  const checkout = async (files: Record<string, string>) => {
+    const dir = await mkdtemp(join(tmpdir(), 'tour-source-'));
+    await mkdir(join(dir, 'guide'));
+    for (const [path, body] of Object.entries(files)) {
+      await mkdir(join(dir, path, '..'), { recursive: true });
+      await writeFile(join(dir, path), body);
+    }
+    return dir;
+  };
+
+  it('reads build/tour/ from the checkout, with no fetch', async () => {
+    const { fetch, calls } = fakeFetch({});
+    const { tour } = await readRoccoSources({ source: CHECKOUT, fetch, requireToken: true });
+    if (tour.kind !== 'tour') throw new Error(`expected the Tour, got ${tour.reason}`);
+    expect(calls).toHaveLength(0);
+    expect(tour.origin).toBe(`${CHECKOUT}/build/tour`);
+    expect(tour.manifest).toEqual({ buildId: 'checkout-build', tag: 'v0.2.0-dev', rocNightly: 'nightly-2026-10-11-7d256b9' });
+    expect(tour.files.map((f) => f.path)).toEqual(['manifest.json', 'preview/index.html']);
+  });
+
+  it('says the Tour is not available when the checkout has no build/tour/', async () => {
+    const dir = await checkout({});
+    const { tour } = await readRoccoSources({ source: dir });
+    expect(tour).toEqual({ kind: 'none', reason: `${dir}/build/tour does not exist. Build the Tour artifacts in the checkout.` });
+  });
+
+  it('fails on a build/tour/ with no manifest.json', async () => {
+    const dir = await checkout({ 'build/tour/preview/index.html': '<p>preview</p>' });
+    await expect(readRoccoSources({ source: dir })).rejects.toThrow(`There is no manifest.json in ${dir}/build/tour`);
+  });
+
+  it('fails on a manifest tag that is not one safe folder name', async () => {
+    const manifest = JSON.stringify({ buildId: 'b', tag: '../escape', rocNightly: 'n' });
+    const dir = await checkout({ 'build/tour/manifest.json': manifest });
+    await expect(readRoccoSources({ source: dir })).rejects.toThrow(
+      `The manifest.json in ${dir}/build/tour has the tag ../escape, which is not a safe folder name`,
+    );
   });
 });
