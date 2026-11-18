@@ -9,6 +9,7 @@ const links = [
     <img src="/pixelsprout.png" alt="" width="22" height="22" />
   </a>
   <a class="project" href="/projects/rocco/">rocco</a>
+  <span class="slash" aria-hidden="true">/</span>
   <a class="title" href="/projects/rocco/tour/">Tour</a>
   <nav aria-label="rocco">
     {links.map((link) => <a href={link.href}>{link.label}</a>)}
@@ -26,11 +27,14 @@ const links = [
     border-bottom: 1px solid var(--edge);
     font-size: 13px;
   }
+  a:hover { text-decoration: none; }
+  a:focus-visible { outline-offset: 0; }
   .brand { display: inline-flex; }
   .brand img { image-rendering: pixelated; }
-  .project, .title { font-family: var(--font-pixel); font-size: 22px; line-height: 1; }
+  .project, .title, .slash { font-family: var(--font-pixel); font-size: 18px; line-height: 1; }
   .project { color: var(--text); }
-  .title::before { content: '/'; margin-right: 12px; color: var(--edge); }
+  .slash { color: var(--edge); }
   .title { color: var(--sprout); }
+  .project:hover, .title:hover { color: var(--clay); }
   nav { display: flex; gap: 16px; margin-left: auto; }
 </style>
