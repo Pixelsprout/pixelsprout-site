@@ -1,10 +1,11 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
-import type { TarFile } from './tar';
 
-export const byPath = (a: TarFile, b: TarFile) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+export type FileEntry = { path: string; data: Uint8Array };
 
-export async function readFolder(dir: string, prefix: string): Promise<TarFile[]> {
+export const byPath = (a: FileEntry, b: FileEntry) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+
+export async function readFolder(dir: string, prefix: string): Promise<FileEntry[]> {
   const entries = await readdir(dir, { recursive: true, withFileTypes: true });
   const files = await Promise.all(
     entries

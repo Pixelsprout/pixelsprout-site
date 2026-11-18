@@ -1,4 +1,4 @@
-import type { TarFile } from './tar';
+import type { FileEntry } from './files';
 import type { TourBuildInfo, TourSource } from './tour-source';
 
 export const TOUR_BASE = '/projects/rocco/tour/';
@@ -9,7 +9,7 @@ export type Tour = { available: true; buildInfo: TourBuildInfo; base: string } |
 // The build deploys only the current tag, so a new release never mixes files with an old one.
 const artifactsBase = (tag: string) => `${TOUR_BASE}_r/${tag}/`;
 
-export function tourSiteFiles(source: TourSource): TarFile[] {
+export function tourSiteFiles(source: TourSource): FileEntry[] {
   if (source.kind === 'none') return [];
   const base = artifactsBase(source.buildInfo.tag);
   return source.files.map((file) => ({ path: base + file.path, data: file.data }));

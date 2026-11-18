@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import type { Markers } from './docs';
-import { byPath, readFolder } from './files';
+import { byPath, readFolder, type FileEntry } from './files';
 import {
   REPO,
   SourceError,
@@ -12,19 +12,17 @@ import {
   type ApiGet,
   type Request,
 } from './github';
-import { readTarGz, type TarFile } from './tar';
-
-export type DocsFile = TarFile;
+import { readTarGz } from './tar';
 
 export type DocsSource =
   | { kind: 'none'; origin: string; reason: string }
-  | { kind: 'docs'; origin: string; ref: string; guide: DocsFile[]; api: DocsFile[]; markers: Markers | null; notes: string[] };
+  | { kind: 'docs'; origin: string; ref: string; guide: FileEntry[]; api: FileEntry[]; markers: Markers | null; notes: string[] };
 
 export const DOCS_ASSET = 'docs.tar.gz';
 
 export async function readDocsCheckout(source: string): Promise<DocsSource> {
   const root = expandHome(source);
-  let guide: DocsFile[];
+  let guide: FileEntry[];
   try {
     guide = await readFolder(join(root, 'guide'), 'guide');
   } catch (error) {

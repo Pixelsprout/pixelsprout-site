@@ -1,9 +1,9 @@
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'astro/zod';
-import { byPath, readFolder } from './files';
+import { byPath, readFolder, type FileEntry } from './files';
 import { REPO, SourceError, errorMessage, expandHome, fetchBytes, type Request } from './github';
-import { readTarGz, type TarFile } from './tar';
+import { readTarGz } from './tar';
 
 export const TOUR_ASSET = 'tour.tar.gz';
 
@@ -13,13 +13,13 @@ export type TourBuildInfo = z.infer<typeof tourBuildInfoSchema>;
 
 export type TourSource =
   | { kind: 'none'; reason: string }
-  | { kind: 'tour'; origin: string; buildInfo: TourBuildInfo; files: TarFile[] };
+  | { kind: 'tour'; origin: string; buildInfo: TourBuildInfo; files: FileEntry[] };
 
 // The tag names a folder on the site, /projects/rocco/tour/_r/<tag>/.
 const SAFE_TAG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 // The engine owns the rest of the Tour artifacts, so the site parses only manifest.json.
-function readBuildInfo(files: TarFile[], where: string): TourBuildInfo {
+function readBuildInfo(files: FileEntry[], where: string): TourBuildInfo {
   const file = files.find((f) => f.path === 'manifest.json');
   if (!file) throw new SourceError(`There is no manifest.json in ${where}`);
   let json: unknown;
@@ -39,7 +39,7 @@ export async function readReleaseTour(request: Request, tag: string, download: s
   if (!download) return { kind: 'none', reason: `the latest release ${tag} has no ${TOUR_ASSET}` };
   const where = `the ${TOUR_ASSET} of ${tag}`;
   const tarball = await fetchBytes(request, download);
-  let files: TarFile[];
+  let files: FileEntry[];
   try {
     files = readTarGz(tarball).sort(byPath);
   } catch (error) {
