@@ -57,9 +57,17 @@ const sources =
         <article class="lesson prose pane-body" id="tour-lesson">{Content && <Content />}</article>
         <nav class="nav" aria-label="Tour steps">
           <button type="button" class="pane-toggle" data-toggle="lesson" aria-controls="tour-lesson" aria-expanded="true" aria-label="Collapse the lesson">-</button>
-          {props.previous && <a class="tap" rel="prev" href={tourUrl(props.previous.slug)}>&lt; {props.previous.title}</a>}
+          {props.previous && (
+            <a class="tap" rel="prev" href={tourUrl(props.previous.slug)} title={props.previous.title} aria-label={`Back: ${props.previous.title}`}>
+              &lt; Back
+            </a>
+          )}
           <a class="tap contents" href={TOUR_BASE}>Contents</a>
-          {props.next && <a class="tap next" rel="next" href={tourUrl(props.next.slug)}>{props.next.title} &gt;</a>}
+          {props.next && (
+            <a class="tap next" rel="next" href={tourUrl(props.next.slug)} title={props.next.title} aria-label={`Next: ${props.next.title}`}>
+              Next &gt;
+            </a>
+          )}
         </nav>
         <div class="edge" data-edge="lesson" role="separator" aria-orientation="vertical" aria-label="Resize the lesson" tabindex="0"></div>
       </div>
