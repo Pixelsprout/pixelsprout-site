@@ -67,9 +67,15 @@ export type RunHost = {
 
 export type RunOptions = { focus: boolean };
 
+// The pause after the last edit before auto-run compiles it.
+export const AUTO_RUN_MS = 600;
+
 export type RunController = {
   start(source: string): void;
   run(source: string, options: RunOptions): void;
+  // The reader changed the source. With auto-run on, the controller runs it after a pause.
+  edited(source: string): void;
+  setAutoRun(on: boolean): void;
   fromWorker(message: WorkerMessage): void;
   fromWindow(source: unknown, data: unknown): void;
   // Starts the newest image again from init in a new Preview.
@@ -91,6 +97,8 @@ export function runController(host: RunHost): RunController {
   let latest: Preview | null = null;
   let isStale = false;
   let lastLine: { kind: ConsoleKind; text: string; count: number } | null = null;
+  let autoRun = true;
+  let autoRunTimer: ReturnType<typeof setTimeout> | undefined;
 
   const newPreview = (): Preview | null => {
     if (!host.createPreview) return null;
@@ -161,6 +169,7 @@ export function runController(host: RunHost): RunController {
 
   return {
     start(source) {
+      clearTimeout(autoRunTimer);
       if (isStale) {
         showStale();
         return compile(source, false);
@@ -171,7 +180,12 @@ export function runController(host: RunHost): RunController {
       compile(source, false);
     },
     run(source, { focus }) {
+      clearTimeout(autoRunTimer);
       compile(source, focus);
+    },
+    edited(source) {
+      clearTimeout(autoRunTimer);
+      if (autoRun) autoRunTimer = setTimeout(() => compile(source, false), AUTO_RUN_MS);
     },
     fromWorker(message) {
       if (message.type === 'ready') return;
@@ -192,6 +206,10 @@ export function runController(host: RunHost): RunController {
         else problems(message.reports);
         if (shown && !isStale && !latest?.ended) host.emit({ type: 'preview', state: 'last-good' });
       }
+    },
+    setAutoRun(on) {
+      autoRun = on;
+      if (!on) clearTimeout(autoRunTimer);
     },
     restart() {
       if (latest?.image) launch(latest.image, true);

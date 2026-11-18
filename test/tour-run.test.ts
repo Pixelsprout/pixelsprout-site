@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { recyclingCompiler, RECYCLE_BYTES, type WorkerReply, type WorkerRequest } from '../src/lib/tour-recycle';
-import { runController, type CompileRequest, type Identity, type PreviewPort, type RunEvent, type WorkerMessage } from '../src/lib/tour-run';
+import { AUTO_RUN_MS, runController, type CompileRequest, type Identity, type PreviewPort, type RunEvent, type WorkerMessage } from '../src/lib/tour-run';
 
 const identity: Identity = {
   digests: ['a', 'b', 'c', 'd', 'e', 'f'],
@@ -463,5 +463,55 @@ describe('runController', () => {
       { type: 'preview', state: 'stale' },
       { type: 'card', card: { kind: 'stale' } },
     ]);
+  });
+});
+
+describe('auto-run', () => {
+  beforeEach(() => void vi.useFakeTimers());
+  afterEach(() => void vi.useRealTimers());
+
+  it('compiles the edit after the reader stops typing', () => {
+    const t = setup();
+    t.running();
+    t.controller.edited('app [a]');
+    vi.advanceTimersByTime(AUTO_RUN_MS - 100);
+    t.controller.edited('app [ab]');
+    vi.advanceTimersByTime(AUTO_RUN_MS - 1);
+    expect(t.requests.map((r) => r.source)).toEqual(['app [stub]']);
+    vi.advanceTimersByTime(1);
+    expect(t.requests.map((r) => r.source)).toEqual(['app [stub]', 'app [ab]']);
+  });
+
+  it('compiles nothing after an edit with auto-run off, and Run still runs', () => {
+    const t = setup();
+    t.running();
+    t.controller.setAutoRun(false);
+    t.controller.edited('app [a]');
+    vi.advanceTimersByTime(AUTO_RUN_MS * 2);
+    expect(t.requests.map((r) => r.source)).toEqual(['app [stub]']);
+    t.controller.run('app [a]', { focus: true });
+    expect(t.requests.map((r) => r.source)).toEqual(['app [stub]', 'app [a]']);
+  });
+
+  it('drops a waiting auto-run when auto-run goes off', () => {
+    const t = setup();
+    t.running();
+    t.controller.edited('app [a]');
+    t.controller.setAutoRun(false);
+    vi.advanceTimersByTime(AUTO_RUN_MS);
+    expect(t.requests).toHaveLength(1);
+  });
+
+  it('drops a waiting auto-run on Run and on the next step', () => {
+    const t = setup();
+    t.running();
+    t.controller.edited('app [a]');
+    t.controller.run('app [a]', { focus: true });
+    vi.advanceTimersByTime(AUTO_RUN_MS);
+    t.compiled([2]);
+    t.controller.edited('app [b]');
+    t.controller.start('app [next step]');
+    vi.advanceTimersByTime(AUTO_RUN_MS);
+    expect(t.requests.map((r) => r.source)).toEqual(['app [stub]', 'app [a]', 'app [next step]']);
   });
 });
