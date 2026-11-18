@@ -12,10 +12,11 @@ export type Identity = {
 
 export type CompileRequest = { type: 'compile'; id: number; source: string };
 
+// memory is the worker's wasm memory size in bytes after the compile. Workers that do not report it are never recycled.
 export type WorkerMessage =
   | { type: 'ready' }
-  | { type: 'compiled'; id: number; image: ArrayBuffer; identity: Identity; reports: string; stats: object }
-  | { type: 'failed'; id: number | null; kind: 'compile' | 'internal'; reports: string; stats?: object };
+  | { type: 'compiled'; id: number; image: ArrayBuffer; identity: Identity; reports: string; stats: object; memory?: number }
+  | { type: 'failed'; id: number | null; kind: 'compile' | 'internal'; reports: string; stats?: object; memory?: number };
 
 export type PageToPreview = { type: 'tour:image'; image: ArrayBuffer; identity: Identity };
 
@@ -143,12 +144,16 @@ export function runController(host: RunHost): RunController {
     host.emit({ type: 'console', ...lastLine });
   };
 
+  const showStale = () => {
+    host.emit({ type: 'preview', state: 'stale' });
+    host.emit({ type: 'card', card: { kind: 'stale' } });
+  };
+
   const stale = () => {
     if (isStale) return;
     isStale = true;
     if (latest && latest !== shown) latest.port.remove();
-    host.emit({ type: 'preview', state: 'stale' });
-    host.emit({ type: 'card', card: { kind: 'stale' } });
+    showStale();
   };
 
   const problems = (reports: string, internal: string | null = null) =>
@@ -156,6 +161,11 @@ export function runController(host: RunHost): RunController {
 
   return {
     start(source) {
+      if (isStale) {
+        showStale();
+        return compile(source, false);
+      }
+      if (latest && latest !== shown) latest.port.remove();
       latest = newPreview();
       if (!latest) host.emit({ type: 'preview', state: 'unsupported' });
       compile(source, false);

@@ -2,7 +2,8 @@ import * as monaco from 'monaco-editor/editor/editor.api.js';
 import type { TourEditor } from './tour-editor';
 import type { TourPanes } from './tour-pane-ui';
 import type { Problem } from './tour-reports';
-import { runController, type Card, type PreviewPort, type PreviewState, type RunEvent, type WorkerMessage } from './tour-run';
+import { recyclingCompiler, type WorkerReply } from './tour-recycle';
+import { runController, type Card, type PreviewPort, type PreviewState, type RunController, type RunEvent, type WorkerMessage } from './tour-run';
 
 // The compile worker compiles the reader's game at this path.
 const APP_PATH = '/rocco/examples/tutorial/tour/main.roc';
@@ -177,12 +178,64 @@ function renderCard({ card: element, stage }: Elements, card: Card | null) {
   element.querySelector('pre')!.textContent = card.kind === 'stale' ? '' : card.message;
 }
 
-export function mountTourRun(base: string, editor: TourEditor, panes: TourPanes, elements: Elements) {
-  const worker = new Worker(`${base}compile-worker/compile-worker.mjs`, { type: 'module' });
-  const webgpu = 'gpu' in navigator;
-  const previewUrl = `${base}preview/host.html`;
+// One session per Tour visit. ClientRouter keeps this module alive across Tour steps, so the compile worker and its
+// cache stay warm. Each step page gives the session its own elements and its own show().
+type Session = { base: string; controller: RunController; stage: HTMLElement; show(event: RunEvent): void; close(): void };
+let session: Session | null = null;
 
+function startSession(base: string, stage: HTMLElement): Session {
+  const workerUrl = `${base}compile-worker/compile-worker.mjs`;
+  const previewUrl = `${base}preview/host.html`;
   const workerFiles = ['compile-worker.mjs', 'compile-worker.wasm', 'source-bundle.json'].map((name) => `${base}compile-worker/${name}`);
+  // A startup failure can be a stale page whose worker files are gone.
+  const startFailed = async (message: WorkerMessage) => {
+    if (await anyMissing(workerFiles)) controller.stale();
+    else controller.fromWorker(message);
+  };
+  const compiler = recyclingCompiler({
+    spawn(listen) {
+      const worker = new Worker(workerUrl, { type: 'module' });
+      worker.addEventListener('message', (event: MessageEvent<WorkerReply>) => listen(event.data));
+      worker.addEventListener('error', () =>
+        listen({ type: 'failed', id: null, kind: 'internal', reports: 'The compile worker did not start.' }),
+      );
+      return { post: (message, transfer = []) => worker.postMessage(message, transfer), terminate: () => worker.terminate() };
+    },
+    deliver: (message) => (message.type === 'failed' && message.id === null ? startFailed(message) : controller.fromWorker(message)),
+  });
+  const controller = runController({
+    compiler,
+    createPreview:
+      'gpu' in navigator
+        ? () =>
+            iframePreview(current.stage, previewUrl, () => {
+              if (previewFileMissing(current.stage)) controller.stale();
+            })
+        : null,
+    emit: (event) => current.show(event),
+  });
+  const fromWindow = (event: MessageEvent) => controller.fromWindow(event.source, event.data);
+  addEventListener('message', fromWindow);
+  const current: Session = {
+    base,
+    controller,
+    stage,
+    show: () => {},
+    close: () => {
+      compiler.close();
+      removeEventListener('message', fromWindow);
+    },
+  };
+  return current;
+}
+
+export function mountTourRun(base: string, editor: TourEditor, panes: TourPanes, elements: Elements) {
+  if (session?.base !== base) {
+    session?.close();
+    session = startSession(base, elements.stage);
+  }
+  session.stage = elements.stage;
+
   const tabs = panelTabs(elements);
   const output = consoleView(elements);
 
@@ -208,41 +261,22 @@ export function mountTourRun(base: string, editor: TourEditor, panes: TourPanes,
     }
   };
 
-  const controller = runController({
-    compiler: { post: (message) => worker.postMessage(message) },
-    createPreview: webgpu
-      ? () =>
-          iframePreview(elements.stage, previewUrl, () => {
-            if (previewFileMissing(elements.stage)) controller.stale();
-          })
-      : null,
-    emit: show,
-  });
-  // A startup failure can be a stale page whose worker files are gone.
-  const startFailed = async (message: WorkerMessage) => {
-    if (await anyMissing(workerFiles)) controller.stale();
-    else controller.fromWorker(message);
-  };
-  worker.addEventListener('message', (event: MessageEvent<WorkerMessage>) => {
-    if (event.data.type === 'failed' && event.data.id === null) startFailed(event.data);
-    else controller.fromWorker(event.data);
-  });
-  worker.addEventListener('error', () =>
-    startFailed({ type: 'failed', id: null, kind: 'internal', reports: 'The compile worker did not start.' }),
-  );
-  addEventListener('message', (event) => controller.fromWindow(event.source, event.data));
+  session.show = show;
+  const { controller } = session;
+  // The Console is per page, so its repeat count starts again on each step.
+  controller.clearConsole();
 
   elements.restart.addEventListener('click', () => controller.restart());
   elements.clear.addEventListener('click', () => controller.clearConsole());
-  elements.card.addEventListener('click', (event) => {
+  // The card is in the persisted stage, so a listener added per step would pile up.
+  elements.card.onclick = (event) => {
     const action = (event.target as HTMLElement).closest<HTMLElement>('[data-card-action]')?.dataset.cardAction;
     if (action === 'restart') controller.restart();
     else if (action === 'dismiss') {
       elements.card.hidden = true;
       elements.stage.dataset.ended = 'frame';
-    }
-    else if (action === 'reload') location.reload();
-  });
+    } else if (action === 'reload') location.reload();
+  };
 
   const run = () => controller.run(editor.source(), { focus: true });
   elements.run.addEventListener('click', run);
@@ -250,4 +284,9 @@ export function mountTourRun(base: string, editor: TourEditor, panes: TourPanes,
 
   controller.start(editor.source());
   return controller;
+}
+
+// Call before the step page goes away. Events in the gap until the next step mounts have no page to show them on.
+export function leaveTourRun() {
+  if (session) session.show = () => {};
 }
