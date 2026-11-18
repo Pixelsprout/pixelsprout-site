@@ -1,4 +1,6 @@
-import { DocsError } from './docs';
+import { DocsError, docsUrl, replaceMarkers, rewriteLinks, type Markers } from './docs';
+import type { FileEntry } from './files';
+import { TOUR_BASE } from './tour';
 
 const SKIP_OPEN = '<!-- tour:skip -->';
 const SKIP_CLOSE = '<!-- /tour:skip -->';
@@ -57,4 +59,44 @@ export function applyTourMarkers(markdown: string, page: string): string {
   const open = block as Block | null;
   if (open) fail(open.line, `opens a ${open.kind} block that never closes`);
   return out.join('\n');
+}
+
+export type GuidePage = { path: string; text: string; title: string; order: number };
+
+export type TourStep = { slug: string; path: string; title: string; order: number; text: string; start: string; answer: string };
+
+export type TourStepsInput = { pages: GuidePage[]; sources: FileEntry[]; ref: string; markers: Markers | null };
+
+const TUTORIAL = 'guide/tutorial/';
+export const STUB_SOURCE = 'examples/tutorial/00-start/main.roc';
+const chapterSource = (slug: string) => `examples/tutorial/${slug}/main.roc`;
+
+export const tourUrl = (slug: string) => `${TOUR_BASE}${slug}/`;
+
+const stepUrl = (slug: string) => (slug.startsWith('tutorial/') ? tourUrl(slug.slice('tutorial/'.length)) : docsUrl(slug));
+
+// One step per Tutorial page. A step starts from the app of the chapter before it; step 1 starts from the stub.
+export function tourSteps({ pages, sources, ref, markers }: TourStepsInput): TourStep[] {
+  const chapters = pages
+    .filter((p) => p.path.startsWith(TUTORIAL) && p.path.endsWith('.md') && !p.path.slice(TUTORIAL.length).includes('/'))
+    .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title))
+    .map((page) => ({ page, slug: page.path.slice(TUTORIAL.length, -'.md'.length) }));
+  const text = new Map(sources.map((s) => [s.path, new TextDecoder().decode(s.data)]));
+  return chapters.map(({ page, slug }, i) => {
+    const sourceOf = (path: string) => {
+      const found = text.get(path);
+      if (found === undefined) throw new DocsError(`The Tour step ${slug} needs ${path}, which the docs source does not have`);
+      return found;
+    };
+    const lesson = applyTourMarkers(replaceMarkers(page.text, markers, page.path), page.path);
+    return {
+      slug,
+      path: page.path,
+      title: page.title,
+      order: page.order,
+      text: rewriteLinks(lesson, page.path, ref, stepUrl),
+      start: sourceOf(i === 0 ? STUB_SOURCE : chapterSource(chapters[i - 1].slug)),
+      answer: sourceOf(chapterSource(slug)),
+    };
+  });
 }
