@@ -34,32 +34,11 @@ describe('deliverTour', () => {
     expect(brotliDecompressSync(out['preview/index.data.br'])).toEqual(Buffer.from(DATA));
   });
 
-  it('points the loaders at the .br files', async () => {
-    const out = byName((await deliverTour(artifacts(), brotli)).files);
-    expect(text(out['compile-worker/compile-worker.mjs'])).toBe(
-      '// loads compile-worker.wasm\nload("compile-worker.wasm.br").then((r) => r.arrayBuffer());',
-    );
-    expect(text(out['preview/index.js'])).toBe("function findWasmBinary() {\n  return locateFile('index.wasm.br');\n}");
-    expect(text(out['preview/index.data.js'])).toBe('var data = fetch("index.data.br");\nModule["addRunDependency"]("index.data.br");');
-  });
-
-  it('keeps every other file unchanged', async () => {
+  it('keeps every other file unchanged, the loaders included', async () => {
     const out = byName((await deliverTour(artifacts(), brotli)).files);
     expect(text(out['manifest.json'])).toBe('{"tag":"v0.2.0"}');
-  });
-
-  it('fails when no loader in the folder names a .wasm or .data file', async () => {
-    const files = artifacts().filter((f) => f.path !== 'preview/index.js');
-    await expect(deliverTour(files, brotli)).rejects.toThrow(
-      'No script in preview/ names index.wasm, so the site cannot point it at index.wasm.br',
-    );
-  });
-
-  it('does not count a name inside a longer file name as a reference', async () => {
-    const files = artifacts().map((f) =>
-      f.path === 'preview/index.js' ? { ...f, data: bytes("locateFile('big-index.wasm')") } : f,
-    );
-    await expect(deliverTour(files, brotli)).rejects.toThrow('No script in preview/ names index.wasm');
+    expect(text(out['preview/index.js'])).toBe("function findWasmBinary() {\n  return locateFile('index.wasm');\n}");
+    expect(text(out['compile-worker/compile-worker.mjs'])).toBe('// loads compile-worker.wasm\nload("compile-worker.wasm").then((r) => r.arrayBuffer());');
   });
 
   it('lists each deployed file with the digest of the bytes that a browser gets after it decodes the body', async () => {

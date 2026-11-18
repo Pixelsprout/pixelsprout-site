@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { recyclingCompiler, RECYCLE_BYTES, type CacheEntry, type WorkerPort, type WorkerReply, type WorkerRequest } from '../src/lib/tour-recycle';
+import { recyclingCompiler, CACHE_IMPORT_LIMIT, RECYCLE_BYTES, type CacheEntry, type WorkerPort, type WorkerReply, type WorkerRequest } from '../src/lib/tour-recycle';
 
 const MiB = 1024 * 1024;
 
@@ -44,6 +44,18 @@ function setup() {
 }
 
 const entry = (path: string, bytes: number[]): CacheEntry => ({ path, bytes: new Uint8Array(bytes).buffer });
+// Only byteLength is read before the transfer, so a large entry needs no real buffer.
+const sized = (path: string, byteLength: number): CacheEntry => ({ path, bytes: { byteLength } as ArrayBuffer });
+
+function recycleWith(entries: CacheEntry[]) {
+  const t = setup();
+  const [old] = t.workers;
+  t.compiled(old, t.compile(), RECYCLE_BYTES + 1);
+  const fresh = t.workers[1];
+  fresh.reply({ type: 'ready' });
+  old.reply({ type: 'cache', entries });
+  return { t, old, fresh };
+}
 
 describe('recyclingCompiler', () => {
   it('compiles on one worker and delivers its replies while the memory stays at the limit', () => {
@@ -119,5 +131,20 @@ describe('recyclingCompiler', () => {
     t.compiled(old, next, RECYCLE_BYTES + 1);
     expect(t.workers).toHaveLength(2);
     expect(old.terminated).toBe(false);
+  });
+
+  it('seeds the new worker with a live cache of exactly the import limit', () => {
+    const entries = [sized('/cache/a', CACHE_IMPORT_LIMIT / 2), sized('/cache/b', CACHE_IMPORT_LIMIT / 2)];
+    const { fresh } = recycleWith(entries);
+    expect(fresh.requests).toEqual([{ type: 'cache-import', entries }]);
+    expect(CACHE_IMPORT_LIMIT).toBe(64 * MiB);
+  });
+
+  it('starts the new worker cold when the live cache is over the import limit', () => {
+    const { t, old, fresh } = recycleWith([sized('/cache/a', CACHE_IMPORT_LIMIT / 2), sized('/cache/b', CACHE_IMPORT_LIMIT / 2 + 1)]);
+    expect(fresh.requests).toEqual([]);
+    expect(old.terminated).toBe(true);
+    const next = t.compile();
+    expect(t.compiles(fresh)).toEqual([next]);
   });
 });

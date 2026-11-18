@@ -83,6 +83,7 @@ check(read('projects/rocco/api/platform/styles.css').includes("font-family: 'IBM
 check(read('projects/rocco/api/platform/index.html') === readFileSync('test/fixtures/rocco/build/docs/platform/index.html', 'utf8'), 'the API HTML changed on the way');
 check(read('projects/rocco/index.html').includes('href="/projects/rocco/docs/"'), 'the rocco page does not link to the docs');
 check(read('projects/rocco/index.html').includes('href="/projects/rocco/api/"'), 'the rocco page does not link to the API');
+check(read('projects/rocco/index.html').includes('href="/projects/rocco/tour/"'), 'the rocco page does not link to the Tour');
 check(
   read('projects/rocco/tour/_r/v0.2.0-dev/preview/index.html') === readFileSync('test/fixtures/rocco/build/tour/preview/index.html', 'utf8'),
   'the Tour artifacts are not at the tag path',
@@ -93,7 +94,10 @@ check(
   existsSync('dist/projects/rocco/tour/_r/v0.2.0-dev/preview/index.wasm.br') && !existsSync('dist/projects/rocco/tour/_r/v0.2.0-dev/preview/index.wasm'),
   'the build deploys a plain .wasm file or no .wasm.br file',
 );
-check(read('projects/rocco/tour/_r/v0.2.0-dev/preview/index.js').includes("locateFile('index.wasm.br')"), 'the Preview does not request index.wasm.br');
+check(
+  read('projects/rocco/tour/_r/v0.2.0-dev/preview/index.js') === readFileSync('test/fixtures/rocco/build/tour/preview/index.js', 'utf8'),
+  'the build changes the engine scripts; the page names the .br files instead',
+);
 check(JSON.parse(read('projects/rocco/tour/artifacts.json')).tag === 'v0.2.0-dev', 'the build lacks the Tour artifacts list');
 const step = read('projects/rocco/tour/01-cube/index.html');
 check(step.includes('Press Run in the Tour.') && !step.includes('roc main.roc'), 'the Tour step does not apply the tour markers');

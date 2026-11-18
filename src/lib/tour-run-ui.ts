@@ -4,6 +4,7 @@ import type { TourPanes } from './tour-pane-ui';
 import type { Problem } from './tour-reports';
 import { attempt, autoRunChoice } from './tour-edits';
 import { recyclingCompiler, type WorkerReply } from './tour-recycle';
+import { tourUrls } from './tour-urls';
 import { runController, type Card, type PreviewPort, type PreviewState, type RunController, type RunEvent, type WorkerMessage } from './tour-run';
 
 // The compile worker compiles the reader's game at this path.
@@ -186,17 +187,15 @@ type Session = { base: string; controller: RunController; stage: HTMLElement; sh
 let session: Session | null = null;
 
 function startSession(base: string, stage: HTMLElement): Session {
-  const workerUrl = `${base}compile-worker/compile-worker.mjs`;
-  const previewUrl = `${base}preview/host.html`;
-  const workerFiles = ['compile-worker.mjs', 'compile-worker.wasm', 'source-bundle.json'].map((name) => `${base}compile-worker/${name}`);
+  const urls = tourUrls(base);
   // A startup failure can be a stale page whose worker files are gone.
   const startFailed = async (message: WorkerMessage) => {
-    if (await anyMissing(workerFiles)) controller.stale();
+    if (await anyMissing(urls.workerFiles)) controller.stale();
     else controller.fromWorker(message);
   };
   const compiler = recyclingCompiler({
     spawn(listen) {
-      const worker = new Worker(workerUrl, { type: 'module' });
+      const worker = new Worker(urls.worker, { type: 'module' });
       worker.addEventListener('message', (event: MessageEvent<WorkerReply>) => listen(event.data));
       worker.addEventListener('error', () =>
         listen({ type: 'failed', id: null, kind: 'internal', reports: 'The compile worker did not start.' }),
@@ -210,7 +209,7 @@ function startSession(base: string, stage: HTMLElement): Session {
     createPreview:
       'gpu' in navigator
         ? () =>
-            iframePreview(current.stage, previewUrl, () => {
+            iframePreview(current.stage, urls.preview, () => {
               if (previewFileMissing(current.stage)) controller.stale();
             })
         : null,
@@ -289,7 +288,7 @@ export function mountTourRun(base: string, editor: TourEditor, panes: TourPanes,
   });
   editor.editor.getModel()!.onDidChangeContent(() => controller.edited(editor.source()));
 
-  const run = () => controller.run(editor.source(), { focus: true });
+  const run = () => controller.run(editor.source());
   elements.run.addEventListener('click', run);
   editor.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, run);
 

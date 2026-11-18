@@ -1,6 +1,6 @@
 import { parseReports, type Problem } from './tour-reports';
 
-// The ADR 0041 Identity, from the compile worker.
+// The page passes it to the Preview unchanged. Its fields must match the identity JSON the compile worker writes.
 export type Identity = {
   digests: string[];
   init: string;
@@ -76,14 +76,14 @@ export type RunHost = {
   emit(event: RunEvent): void;
 };
 
-export type RunOptions = { focus: boolean };
-
 // The pause after the last edit before auto-run compiles it.
 export const AUTO_RUN_MS = 600;
 
 export type RunController = {
   start(source: string): void;
-  run(source: string, options: RunOptions): void;
+  // With auto-run off, the Preview takes focus so the reader can play at once. With auto-run on, focus stays in the
+  // editor.
+  run(source: string): void;
   // The reader changed the source. With auto-run on, the controller runs it after a pause.
   edited(source: string): void;
   setAutoRun(on: boolean): void;
@@ -97,16 +97,16 @@ export type RunController = {
 };
 
 type Image = { image: ArrayBuffer; identity: Identity };
+// loading until tour:waiting, sent after the first image goes, ready after rocco:ready, and ended after a crash, a
+// stop or a refused image.
+type Phase = 'loading' | 'waiting' | 'sent' | 'ready' | 'ended';
 // image is the one the Preview runs, kept so a new Preview can start from it. A later image is queued until the
 // Preview is ready and no other later image is in flight.
 type Preview = {
   port: PreviewPort;
-  waiting: boolean;
-  ready: boolean;
+  phase: Phase;
   image: Image | null;
-  sent: boolean;
   focus: boolean;
-  ended: boolean;
   inFlight: Image | null;
   queued: Image | null;
 };
@@ -125,9 +125,14 @@ export function runController(host: RunHost): RunController {
   let autoRun = true;
   let autoRunTimer: ReturnType<typeof setTimeout> | undefined;
 
+  // A new Preview that has not drawn yet goes, and the one on screen stays.
+  const dropUnshown = () => {
+    if (latest && latest !== shown) latest.port.remove();
+  };
+
   const newPreview = (): Preview | null => {
     if (!host.createPreview) return null;
-    return { port: host.createPreview(), waiting: false, ready: false, image: null, sent: false, focus: false, ended: false, inFlight: null, queued: null };
+    return { port: host.createPreview(), phase: 'loading', image: null, focus: false, inFlight: null, queued: null };
   };
 
   // The controller keeps the original, so a later Preview can start from the same image.
@@ -137,14 +142,14 @@ export function runController(host: RunHost): RunController {
   };
 
   const send = (preview: Preview) => {
-    if (!preview.waiting || !preview.image || preview.sent) return;
-    preview.sent = true;
+    if (preview.phase !== 'waiting' || !preview.image) return;
+    preview.phase = 'sent';
     post(preview, preview.image);
   };
 
   // A hot reload. The Preview replies to each later image with tour:swapped, tour:need-iframe or tour:bad-image.
   const sendLater = (preview: Preview) => {
-    if (!preview.ready || preview.ended || preview.inFlight || !preview.queued) return;
+    if (preview.phase !== 'ready' || preview.inFlight || !preview.queued) return;
     preview.inFlight = preview.queued;
     preview.queued = null;
     post(preview, preview.inFlight);
@@ -163,9 +168,9 @@ export function runController(host: RunHost): RunController {
   const launch = (image: Image, focus: boolean, fresh = false) => {
     if (isStale) return;
     newest = image;
-    if (!fresh && latest?.image && !latest.ended) {
+    if (!fresh && latest?.image && latest.phase !== 'ended') {
       latest.focus = focus;
-      if (latest.sent) {
+      if (latest.phase === 'sent' || latest.phase === 'ready') {
         latest.queued = image;
         sendLater(latest);
       } else {
@@ -175,7 +180,7 @@ export function runController(host: RunHost): RunController {
     }
     // A prewarmed Preview with no image yet takes this one.
     if (fresh || !latest || latest.image) {
-      if (latest && latest !== shown) latest.port.remove();
+      dropUnshown();
       latest = newPreview();
     }
     if (!latest) return;
@@ -186,7 +191,7 @@ export function runController(host: RunHost): RunController {
   };
 
   const ready = (preview: Preview) => {
-    preview.ready = true;
+    if (preview.phase !== 'ended') preview.phase = 'ready';
     if (shown && shown !== preview) shown.port.remove();
     shown = preview;
     preview.port.show();
@@ -210,12 +215,19 @@ export function runController(host: RunHost): RunController {
   const needIframe = (preview: Preview, reason: NeedIframeReason) => {
     const image = preview.queued ?? preview.inFlight;
     preview.queued = preview.inFlight = null;
-    if (preview.ended) return;
-    preview.ended = true;
+    if (preview.phase === 'ended') return;
+    preview.phase = 'ended';
     if (!image) return;
     const line = RESTARTED[reason];
     if (line) log('restart', line);
     launch(image, preview.focus, true);
+  };
+
+  const end = (preview: Preview, kind: 'crashed' | 'stopped', message: string) => {
+    preview.phase = 'ended';
+    log(kind === 'crashed' ? 'crash' : 'stopped', message);
+    host.emit({ type: 'preview', state: kind });
+    host.emit({ type: 'card', card: { kind, message } });
   };
 
   const log = (kind: ConsoleKind, text: string) => {
@@ -232,7 +244,7 @@ export function runController(host: RunHost): RunController {
   const stale = () => {
     if (isStale) return;
     isStale = true;
-    if (latest && latest !== shown) latest.port.remove();
+    dropUnshown();
     showStale();
   };
 
@@ -246,15 +258,15 @@ export function runController(host: RunHost): RunController {
         showStale();
         return compile(source, false);
       }
-      if (latest && latest !== shown) latest.port.remove();
+      dropUnshown();
       latest = newPreview();
       newest = null;
       if (!latest) host.emit({ type: 'preview', state: 'unsupported' });
       compile(source, false);
     },
-    run(source, { focus }) {
+    run(source) {
       clearTimeout(autoRunTimer);
-      compile(source, focus);
+      compile(source, !autoRun);
     },
     edited(source) {
       clearTimeout(autoRunTimer);
@@ -277,7 +289,7 @@ export function runController(host: RunHost): RunController {
       } else {
         if (message.kind === 'internal') problems('', message.reports);
         else problems(message.reports);
-        if (shown && !isStale && !latest?.ended) host.emit({ type: 'preview', state: 'last-good' });
+        if (shown && !isStale && latest?.phase !== 'ended') host.emit({ type: 'preview', state: 'last-good' });
       }
     },
     setAutoRun(on) {
@@ -297,7 +309,7 @@ export function runController(host: RunHost): RunController {
       if (isStale || !preview || source !== preview.port.source || typeof (data as { type?: unknown } | null)?.type !== 'string') return;
       const message = data as PreviewToPage;
       if (message.type === 'tour:waiting') {
-        preview.waiting = true;
+        if (preview.phase === 'loading') preview.phase = 'waiting';
         send(preview);
       } else if (message.type === 'rocco:ready') {
         ready(preview);
@@ -308,19 +320,12 @@ export function runController(host: RunHost): RunController {
       } else if (message.type === 'tour:dbg' || message.type === 'tour:expect') {
         log(message.type === 'tour:dbg' ? 'dbg' : 'expect', message.text);
       } else if (message.type === 'tour:crash') {
-        preview.ended = true;
-        log('crash', message.message);
-        host.emit({ type: 'preview', state: 'crashed' });
-        host.emit({ type: 'card', card: { kind: 'crashed', message: message.message } });
+        end(preview, 'crashed', message.message);
       } else if (message.type === 'tour:bad-image') {
         stale();
       } else if (message.type === 'rocco:stopped' || message.type === 'rocco:unsupported') {
         // A crash can be followed by rocco:stopped; the crash card stays.
-        if (preview.ended) return;
-        preview.ended = true;
-        log('stopped', message.message);
-        host.emit({ type: 'preview', state: 'stopped' });
-        host.emit({ type: 'card', card: { kind: 'stopped', message: message.message } });
+        if (preview.phase !== 'ended') end(preview, 'stopped', message.message);
       } else {
         host.emit({ type: 'output', message });
       }

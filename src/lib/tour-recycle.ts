@@ -3,6 +3,10 @@ import type { CompilePort, CompileRequest, WorkerMessage } from './tour-run';
 // The wasm memory of a worker never shrinks. A worker over this size is replaced after its compile.
 export const RECYCLE_BYTES = 640 * 1024 * 1024;
 
+// A typical live cache is 5 to 12 MiB. A larger one would push the new worker toward the recycle limit at once,
+// so the new worker starts cold.
+export const CACHE_IMPORT_LIMIT = 64 * 1024 * 1024;
+
 // One file of the worker's /cache/ folder.
 export type CacheEntry = { path: string; bytes: ArrayBuffer };
 
@@ -28,8 +32,7 @@ export function recyclingCompiler(host: RecycleHost): CompilePort & { close(): v
   const retired = new Set<Worker>();
 
   const spawn = (): Worker => {
-    const worker: Worker = { port: undefined as never, compiling: 0 };
-    worker.port = host.spawn((message) => receive(worker, message));
+    const worker: Worker = { port: host.spawn((message) => receive(worker, message)), compiling: 0 };
     return worker;
   };
 
@@ -42,7 +45,8 @@ export function recyclingCompiler(host: RecycleHost): CompilePort & { close(): v
     if (!recycle?.ready || !recycle.entries) return;
     const { next, entries } = recycle;
     recycle = null;
-    next.port.post({ type: 'cache-import', entries }, entries.map((e) => e.bytes));
+    const size = entries.reduce((sum, e) => sum + e.bytes.byteLength, 0);
+    if (size <= CACHE_IMPORT_LIMIT) next.port.post({ type: 'cache-import', entries }, entries.map((e) => e.bytes));
     const old = active;
     active = next;
     retire(old);

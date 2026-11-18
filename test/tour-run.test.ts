@@ -128,13 +128,14 @@ describe('runController', () => {
 
   it('runs a refused edit in a new Preview that replaces the old one on its first frame and takes focus', () => {
     const t = setup();
+    t.controller.setAutoRun(false);
     t.controller.start('app [stub]');
     const [first] = t.previews;
     t.from(first, { type: 'tour:waiting' });
     t.compiled([1]);
     t.from(first, { type: 'rocco:ready' });
 
-    t.controller.run('app [edited]', { focus: true });
+    t.controller.run('app [edited]');
     expect(t.requests.at(-1)!.source).toBe('app [edited]');
     t.compiled([2]);
     t.from(first, { type: 'tour:need-iframe', reason: 'init' });
@@ -159,7 +160,7 @@ describe('runController', () => {
     t.from(first, { type: 'rocco:ready' });
     expect(t.events).toContainEqual({ type: 'problems', problems: [], internal: null });
 
-    t.controller.run('app [broken]', { focus: true });
+    t.controller.run('app [broken]');
     t.failed(twoErrors);
     const problems = t.events.filter((e) => e.type === 'problems').at(-1);
     expect(problems).toMatchObject({ internal: null, problems: [{ title: 'does not exist', line: 34 }, { title: 'type mismatch', line: 29 }] });
@@ -180,8 +181,8 @@ describe('runController', () => {
   it('compiles one source at a time, and only the newest of the edits that wait', () => {
     const t = setup();
     t.controller.start('app [stub]');
-    t.controller.run('app [one]', { focus: true });
-    t.controller.run('app [two]', { focus: true });
+    t.controller.run('app [one]');
+    t.controller.run('app [two]');
     expect(t.requests.map((r) => r.source)).toEqual(['app [stub]']);
 
     t.compiled([1], t.requests[0].id);
@@ -202,7 +203,7 @@ describe('runController', () => {
     t.from(first, { type: 'tour:dbg', text: '"tick"' });
     expect(t.consoleLines()).toEqual([{ kind: 'dbg', text: '"tick"', count: 1 }]);
 
-    t.controller.run('app [edited]', { focus: true });
+    t.controller.run('app [edited]');
     t.compiled([2]);
     t.from(first, { type: 'tour:need-iframe', reason: 'init' });
     const second = t.previews[1];
@@ -226,7 +227,7 @@ describe('runController', () => {
     t.controller.start('app [stub]');
     expect(t.events).toContainEqual({ type: 'preview', state: 'unsupported' });
     t.compiled();
-    t.controller.run('app [broken]', { focus: true });
+    t.controller.run('app [broken]');
     t.failed(twoErrors);
     expect(t.previews).toEqual([]);
     expect(t.events.filter((e) => e.type === 'problems').at(-1)).toMatchObject({ problems: [{ line: 34 }, { line: 29 }] });
@@ -268,7 +269,7 @@ describe('runController', () => {
     expect(t.consoleLines()).toEqual([{ kind: 'crash', text: 'boom', count: 1 }]);
     expect(first.removed).toBe(false);
 
-    t.controller.run('app [fixed]', { focus: true });
+    t.controller.run('app [fixed]');
     t.compiled([9]);
     const second = t.previews.at(-1)!;
     expect(second).not.toBe(first);
@@ -332,11 +333,11 @@ describe('runController', () => {
     expect(t.events.filter((e) => e.type === 'preview').at(-1)).toEqual({ type: 'preview', state: 'stale' });
 
     t.controller.restart();
-    t.controller.run('app [edited]', { focus: true });
+    t.controller.run('app [edited]');
     t.compiled([2]);
     expect(t.previews).toHaveLength(1);
 
-    t.controller.run('app [broken]', { focus: true });
+    t.controller.run('app [broken]');
     t.failed(twoErrors);
     expect(t.events.filter((e) => e.type === 'problems').at(-1)).toMatchObject({ problems: [{ line: 34 }, { line: 29 }] });
     expect(t.events.filter((e) => e.type === 'card').at(-1)).toEqual({ type: 'card', card: { kind: 'stale' } });
@@ -345,7 +346,7 @@ describe('runController', () => {
   it('keeps the reload notice when the page finds a missing file while a Preview starts', () => {
     const t = setup();
     const first = t.running();
-    t.controller.run('app [edited]', { focus: true });
+    t.controller.run('app [edited]');
     t.compiled([2]);
     t.from(first, { type: 'tour:need-iframe', reason: 'init' });
     const second = t.previews[1];
@@ -360,7 +361,7 @@ describe('runController', () => {
     const t = setup();
     const preview = t.running();
     t.from(preview, { type: 'tour:crash', message: 'boom' });
-    t.controller.run('app [broken]', { focus: true });
+    t.controller.run('app [broken]');
     t.failed(twoErrors);
     expect(t.events.filter((e) => e.type === 'preview').at(-1)).toEqual({ type: 'preview', state: 'crashed' });
   });
@@ -437,7 +438,7 @@ describe('runController', () => {
     expect(workers).toHaveLength(2);
     const fresh = workers[1];
 
-    controller.run('app [edit while the new worker starts]', { focus: true });
+    controller.run('app [edit while the new worker starts]');
     expect(lastCompile(old).source).toBe('app [edit while the new worker starts]');
     compiled(old, 2, 700 * 1024 * 1024);
     controller.fromWindow(previews[0].source, { type: 'tour:swapped' });
@@ -446,7 +447,7 @@ describe('runController', () => {
     old.reply({ type: 'cache', entries: [{ path: '/cache/a', bytes: new ArrayBuffer(4) }] });
     expect(old.terminated).toBe(true);
 
-    controller.run('app [edit on the new worker]', { focus: true });
+    controller.run('app [edit on the new worker]');
     expect(lastCompile(fresh).source).toBe('app [edit on the new worker]');
     compiled(fresh, 3, 64 * 1024 * 1024);
     expect(previews[0].posts.map(bytesOf)).toEqual([[1], [2], [3]]);
@@ -490,8 +491,17 @@ describe('auto-run', () => {
     t.controller.edited('app [a]');
     vi.advanceTimersByTime(AUTO_RUN_MS * 2);
     expect(t.requests.map((r) => r.source)).toEqual(['app [stub]']);
-    t.controller.run('app [a]', { focus: true });
+    t.controller.run('app [a]');
     expect(t.requests.map((r) => r.source)).toEqual(['app [stub]', 'app [a]']);
+  });
+
+  it('leaves focus in the editor on Run with auto-run on', () => {
+    const t = setup();
+    const preview = t.running();
+    t.controller.run('app [edited]');
+    t.compiled([2]);
+    t.from(preview, { type: 'tour:swapped' });
+    expect(preview.focused).toBe(false);
   });
 
   it('drops a waiting auto-run when auto-run goes off', () => {
@@ -507,7 +517,7 @@ describe('auto-run', () => {
     const t = setup();
     t.running();
     t.controller.edited('app [a]');
-    t.controller.run('app [a]', { focus: true });
+    t.controller.run('app [a]');
     vi.advanceTimersByTime(AUTO_RUN_MS);
     t.compiled([2]);
     t.controller.edited('app [b]');
@@ -521,7 +531,7 @@ describe('hot reload', () => {
   it('sends a later image to the running Preview and keeps it on tour:swapped', () => {
     const t = setup();
     const preview = t.running();
-    t.controller.run('app [edited]', { focus: false });
+    t.controller.run('app [edited]');
     t.compiled([2]);
     expect(t.previews).toHaveLength(1);
     const [, later] = t.imagesSent(preview);
@@ -545,7 +555,7 @@ describe('hot reload', () => {
   ])('starts a new Preview with the refused image on tour:need-iframe %s and says why in the Console', (reason, line) => {
     const t = setup();
     const first = t.running();
-    t.controller.run('app [edited]', { focus: false });
+    t.controller.run('app [edited]');
     t.compiled([2]);
     t.from(first, { type: 'tour:need-iframe', reason });
     expect(t.consoleLines()).toEqual([{ kind: 'restart', text: line, count: 1 }]);
@@ -567,14 +577,14 @@ describe('hot reload', () => {
   ])('keeps the card on tour:need-iframe %s, and the next edit starts a new Preview', (reason, end) => {
     const t = setup();
     const first = t.running();
-    t.controller.run('app [edited]', { focus: false });
+    t.controller.run('app [edited]');
     t.compiled([2]);
     t.from(first, end);
     const lines = t.consoleLines();
     t.from(first, { type: 'tour:need-iframe', reason });
     expect(t.consoleLines()).toEqual(lines);
     expect(t.previews).toHaveLength(1);
-    t.controller.run('app [fixed]', { focus: false });
+    t.controller.run('app [fixed]');
     t.compiled([3]);
     const second = t.previews[1];
     t.from(second, { type: 'tour:waiting' });
@@ -585,7 +595,7 @@ describe('hot reload', () => {
     const t = setup();
     const preview = t.running();
     for (const [n, bytes] of [[1, [2]], [2, [3]], [3, [4]]] as const) {
-      t.controller.run(`app [edit ${n}]`, { focus: false });
+      t.controller.run(`app [edit ${n}]`);
       t.compiled([...bytes]);
     }
     expect(t.imagesSent(preview).map(bytesOf)).toEqual([[1, 2, 3], [2]]);
@@ -598,9 +608,9 @@ describe('hot reload', () => {
   it('starts the newest image when the Preview refuses an older one', () => {
     const t = setup();
     const first = t.running();
-    t.controller.run('app [init edit]', { focus: false });
+    t.controller.run('app [init edit]');
     t.compiled([2]);
-    t.controller.run('app [step edit]', { focus: false });
+    t.controller.run('app [step edit]');
     t.compiled([3]);
     t.from(first, { type: 'tour:need-iframe', reason: 'init' });
     const second = t.previews[1];
@@ -612,12 +622,12 @@ describe('hot reload', () => {
   it('holds a later image until the new Preview draws its first frame', () => {
     const t = setup();
     const first = t.running();
-    t.controller.run('app [init edit]', { focus: false });
+    t.controller.run('app [init edit]');
     t.compiled([2]);
     t.from(first, { type: 'tour:need-iframe', reason: 'init' });
     const second = t.previews[1];
     t.from(second, { type: 'tour:waiting' });
-    t.controller.run('app [step edit]', { focus: false });
+    t.controller.run('app [step edit]');
     t.compiled([3]);
     expect(t.imagesSent(second).map(bytesOf)).toEqual([[2]]);
     t.from(second, { type: 'rocco:ready' });
@@ -628,10 +638,10 @@ describe('hot reload', () => {
   it('replaces the image of a new Preview that has not asked for it yet', () => {
     const t = setup();
     const first = t.running();
-    t.controller.run('app [init edit]', { focus: false });
+    t.controller.run('app [init edit]');
     t.compiled([2]);
     t.from(first, { type: 'tour:need-iframe', reason: 'init' });
-    t.controller.run('app [another edit]', { focus: false });
+    t.controller.run('app [another edit]');
     t.compiled([3]);
     const second = t.previews[1];
     t.from(second, { type: 'tour:waiting' });
@@ -643,7 +653,7 @@ describe('hot reload', () => {
     const t = setup();
     const first = t.running();
     t.from(first, { type: 'tour:crash', message: 'boom' });
-    t.controller.run('app [fixed]', { focus: false });
+    t.controller.run('app [fixed]');
     t.compiled([2]);
     expect(t.imagesSent(first)).toHaveLength(1);
     const second = t.previews[1];
@@ -654,12 +664,12 @@ describe('hot reload', () => {
   it('ends the run on a crash in the swap frame and starts the next edit in a new Preview', () => {
     const t = setup();
     const first = t.running();
-    t.controller.run('app [crashes in view]', { focus: false });
+    t.controller.run('app [crashes in view]');
     t.compiled([2]);
     t.from(first, { type: 'tour:swapped' });
     t.from(first, { type: 'tour:crash', message: 'boom' });
     expect(t.events.filter((e) => e.type === 'preview').at(-1)).toEqual({ type: 'preview', state: 'crashed' });
-    t.controller.run('app [fixed]', { focus: false });
+    t.controller.run('app [fixed]');
     t.compiled([3]);
     expect(t.imagesSent(first)).toHaveLength(2);
     expect(t.previews).toHaveLength(2);
@@ -668,9 +678,9 @@ describe('hot reload', () => {
   it('restarts the newest image after a crash while a later image waited', () => {
     const t = setup();
     const first = t.running();
-    t.controller.run('app [one]', { focus: false });
+    t.controller.run('app [one]');
     t.compiled([2]);
-    t.controller.run('app [two]', { focus: false });
+    t.controller.run('app [two]');
     t.compiled([3]);
     t.from(first, { type: 'tour:crash', message: 'boom' });
     t.from(first, { type: 'tour:need-iframe', reason: 'crashed' });
@@ -684,20 +694,21 @@ describe('hot reload', () => {
   it('keeps the last good run on a failed compile, and a swap clears "last good run"', () => {
     const t = setup();
     const preview = t.running();
-    t.controller.run('app [broken]', { focus: false });
+    t.controller.run('app [broken]');
     t.failed(twoErrors);
     expect(t.events.at(-1)).toEqual({ type: 'preview', state: 'last-good' });
-    t.controller.run('app [fixed]', { focus: false });
+    t.controller.run('app [fixed]');
     t.compiled([2]);
     expect(t.events.filter((e) => e.type === 'preview').at(-1)).toEqual({ type: 'preview', state: 'last-good' });
     t.from(preview, { type: 'tour:swapped' });
     expect(t.events.filter((e) => e.type === 'preview').at(-1)).toEqual({ type: 'preview', state: 'running' });
   });
 
-  it('focuses the Preview after a swap that Run asked for', () => {
+  it('focuses the Preview after a swap that Run asked for with auto-run off', () => {
     const t = setup();
     const preview = t.running();
-    t.controller.run('app [edited]', { focus: true });
+    t.controller.setAutoRun(false);
+    t.controller.run('app [edited]');
     t.compiled([2]);
     expect(preview.focused).toBe(false);
     t.from(preview, { type: 'tour:swapped' });
@@ -707,7 +718,7 @@ describe('hot reload', () => {
   it('ignores the replies of a Preview that a new Preview replaced', () => {
     const t = setup();
     const first = t.running();
-    t.controller.run('app [edited]', { focus: false });
+    t.controller.run('app [edited]');
     t.compiled([2]);
     t.controller.restart();
     const events = t.events.length;

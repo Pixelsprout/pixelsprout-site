@@ -85,8 +85,8 @@ Vercel does not serve pre-compressed files, and it compresses `.wasm` and `.data
 compresses them itself.
 
 - The build replaces each `.wasm` and `.data` file with a brotli `.br` file. It deploys no plain copy.
-- The build changes each quoted file name, such as `"index.data"`, to the `.br` name in the scripts of the same folder.
-  If no script in the folder names the file, the build fails.
+- The build does not change the engine scripts. The page passes `?suffix=.br` to the compile worker and the Preview, and
+  they request `compile-worker.wasm.br`, `index.wasm.br` and `index.data.br`. `src/lib/tour-urls.ts` holds these names.
 - Quality 11 takes about 45 s for the compile worker. The build keeps each result in `node_modules/.astro/tour-brotli/`,
   so the next build with the same artifacts is fast.
 - `vercel.json` sends `Content-Encoding: br`, the type of the plain file and `Vary: Accept-Encoding` for `.wasm.br` and

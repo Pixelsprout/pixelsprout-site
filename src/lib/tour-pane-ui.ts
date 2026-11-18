@@ -15,6 +15,8 @@ export type TourPanes = {
   layout(): PaneLayout;
   setCollapsed(pane: Pane, collapsed: boolean): void;
   setExpanded(expanded: boolean): void;
+  // Removes the listener on document. The rest belong to this step's elements.
+  close(): void;
 };
 
 const NAMES: Record<Pane, string> = { lesson: 'the lesson', editor: 'the editor', panel: 'the panel', preview: 'the Preview' };
@@ -109,9 +111,10 @@ export function mountTourPanes(tour: HTMLElement): TourPanes {
     expand.textContent = expanded ? 'Shrink' : 'Expand';
   };
   expand.addEventListener('click', () => setExpanded(!tour.hasAttribute('data-expanded')));
-  document.addEventListener('keydown', (event) => {
+  const onKey = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && tour.hasAttribute('data-expanded')) setExpanded(false);
-  });
+  };
+  document.addEventListener('keydown', onKey);
 
   render();
   return {
@@ -120,5 +123,6 @@ export function mountTourPanes(tour: HTMLElement): TourPanes {
       if (layout.collapsed[name] !== collapsed) commit(toggle(layout, name));
     },
     setExpanded,
+    close: () => document.removeEventListener('keydown', onKey),
   };
 }

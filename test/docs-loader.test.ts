@@ -74,7 +74,7 @@ describe('docsLoader with a release that has a tour.tar.gz', () => {
     expect(JSON.parse((await site('manifest.json')).toString()).buildId).toBe('b7f3c2');
     expect((await site('preview/index.html')).toString()).toBe('<!doctype html>\n<p>preview</p>\n');
     expect(Array.from(brotliDecompressSync(await site('worker/compile.wasm.br')))).toEqual([0, 97, 115, 109, 1, 0, 0, 0]);
-    expect((await site('worker/compile.js')).toString()).toContain('"compile.wasm.br"');
+    expect((await site('worker/compile.js')).toString()).toBe('fetch(new URL("compile.wasm", import.meta.url));\n');
     await expect(site('worker/compile.wasm')).rejects.toThrow('ENOENT');
     expect(entries.get('#source')).toMatchObject({
       tour: { buildId: 'b7f3c2', tag: 'v0.2.0', rocNightly: 'nightly-2026-10-11-7d256b9' },

@@ -34,10 +34,13 @@ export async function getStaticPaths() {
 const props = Astro.props;
 const step = props.kind === 'step' ? props.step : null;
 const { Content } = step ? await render(step) : { Content: null };
-// Escapes "<" so a source with </script> cannot end the data block.
 const grid = template(DEFAULT_LAYOUT);
 const gridStyle = `--tour-columns: ${grid.columns}; --work-rows: ${grid.rows}`;
-const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.start, answer: step.data.answer }).replace(/</g, '\\u003c');
+const sources =
+  step &&
+  JSON.stringify({ slug: step.data.slug, start: step.data.start, answer: step.data.answer })
+    // Escapes "<" so a source with </script> cannot end the data block.
+    .replace(/</g, '\\u003c');
 ---
 {props.kind === 'unavailable' ? (
   <Tour title={props.title} description="The rocco Tour is not available for this release.">
@@ -123,29 +126,31 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
 
 <script>
   import { mountTourEditor, type TourEditor } from '../../../../lib/tour-editor';
-  import { mountTourPanes } from '../../../../lib/tour-pane-ui';
+  import { mountTourPanes, type TourPanes } from '../../../../lib/tour-pane-ui';
 
   import { leaveTourRun, mountTourRun } from '../../../../lib/tour-run-ui';
 
   // ClientRouter runs this module once per visit. Each Tour step mounts on astro:page-load and unmounts before the swap.
   let mounted: TourEditor | null = null;
+  let panes: TourPanes | null = null;
 
   async function mountStep() {
     const tour = document.querySelector<HTMLElement>('.tour');
-    const panes = tour && mountTourPanes(tour);
+    const stepPanes = tour && mountTourPanes(tour);
+    panes = stepPanes;
 
     const data = document.getElementById('tour-step');
     const host = document.getElementById('tour-editor');
-    if (tour && panes && data && host) {
+    if (tour && stepPanes && data && host) {
       const editor = await mountTourEditor(host, JSON.parse(data.textContent!));
       // The reader left while Monaco loaded.
       if (!host.isConnected) return editor.editor.dispose();
       mounted = editor;
-      document.querySelector('[data-action="reset"]')!.addEventListener('click', () => editor.reset());
-      document.querySelector('[data-action="answer"]')!.addEventListener('click', () => editor.showAnswer());
       const byId = (id: string) => document.getElementById(id)!;
       const action = <T extends HTMLElement = HTMLElement>(name: string) => document.querySelector<T>(`[data-action="${name}"]`)!;
-      mountTourRun(tour.dataset.base!, editor, panes, {
+      action('reset').addEventListener('click', () => editor.reset());
+      action('answer').addEventListener('click', () => editor.showAnswer());
+      mountTourRun(tour.dataset.base!, editor, stepPanes, {
         stage: byId('tour-stage'),
         status: byId('tour-status'),
         restart: action<HTMLButtonElement>('restart'),
@@ -165,6 +170,8 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
   document.addEventListener('astro:page-load', mountStep);
   document.addEventListener('astro:before-swap', () => {
     leaveTourRun();
+    panes?.close();
+    panes = null;
     mounted?.editor.getModel()?.dispose();
     mounted?.editor.dispose();
     mounted = null;
