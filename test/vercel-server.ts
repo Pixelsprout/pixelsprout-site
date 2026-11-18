@@ -22,7 +22,8 @@ export async function serveLikeVercel(dir: string, vercelJson: unknown, fault: F
   const { routes, error } = getTransformedRoutes(vercelJson as never);
   if (error) throw new Error(error.message);
   const server: Server = createServer(async (req, res) => {
-    const path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+    const pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+    const path = pathname.endsWith('/') ? `${pathname}index.html` : pathname;
     let body: Buffer;
     try {
       body = await readFile(join(dir, normalize(path)));
