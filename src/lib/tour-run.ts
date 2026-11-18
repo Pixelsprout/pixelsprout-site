@@ -12,10 +12,11 @@ export type Identity = {
 
 export type CompileRequest = { type: 'compile'; id: number; source: string };
 
+// memory is the worker's wasm memory size in bytes after the compile. Workers that do not report it are never recycled.
 export type WorkerMessage =
   | { type: 'ready' }
-  | { type: 'compiled'; id: number; image: ArrayBuffer; identity: Identity; reports: string; stats: object }
-  | { type: 'failed'; id: number | null; kind: 'compile' | 'internal'; reports: string; stats?: object };
+  | { type: 'compiled'; id: number; image: ArrayBuffer; identity: Identity; reports: string; stats: object; memory?: number }
+  | { type: 'failed'; id: number | null; kind: 'compile' | 'internal'; reports: string; stats?: object; memory?: number };
 
 export type PageToPreview = { type: 'tour:image'; image: ArrayBuffer; identity: Identity };
 
