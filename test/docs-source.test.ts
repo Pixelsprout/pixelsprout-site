@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { readDocsSource } from '../src/lib/docs-source';
+import { readRoccoSources } from '../src/lib/rocco-sources';
 import type { FetchLike } from '../src/lib/github';
 
 const API = 'https://api.github.com/repos/Pixelsprout/rocco-engine';
@@ -64,10 +64,10 @@ const release = () => ({
 
 const text = (data: Uint8Array) => new TextDecoder().decode(data);
 
-describe('readDocsSource from the latest release', () => {
+describe('the docs from the latest release', () => {
   it('reads guide/ at the latest release tag and unpacks its docs.tar.gz', async () => {
     const { fetch } = fakeFetch(release());
-    const source = await readDocsSource({ fetch });
+    const { docs: source } = await readRoccoSources({ fetch });
     if (source.kind !== 'docs') throw new Error(`expected docs, got ${source.reason}`);
     expect(source.ref).toBe('v0.2.0');
     expect(source.origin).toBe('Pixelsprout/rocco-engine@v0.2.0');
@@ -88,7 +88,7 @@ describe('readDocsSource from the latest release', () => {
 
   it('sends GITHUB_TOKEN to the API calls only', async () => {
     const { fetch, calls } = fakeFetch(release());
-    await readDocsSource({ fetch, token: 't0k' });
+    await readRoccoSources({ fetch, token: 't0k' });
     const auth = Object.fromEntries(calls.map((c) => [c.url, c.headers?.Authorization]));
     expect(auth[LATEST]).toBe('Bearer t0k');
     expect(auth[TREE]).toBe('Bearer t0k');
@@ -98,7 +98,7 @@ describe('readDocsSource from the latest release', () => {
 
   it('says that no release has docs when the repository has no release', async () => {
     const { fetch } = fakeFetch({ [LATEST]: { status: 404, body: {} } });
-    expect(await readDocsSource({ fetch })).toEqual({
+    expect((await readRoccoSources({ fetch })).docs).toEqual({
       kind: 'none',
       origin: 'Pixelsprout/rocco-engine',
       reason: 'Pixelsprout/rocco-engine has no release',
@@ -107,7 +107,7 @@ describe('readDocsSource from the latest release', () => {
 
   it('says that no release has docs when the latest release has no docs.tar.gz', async () => {
     const { fetch, calls } = fakeFetch({ [LATEST]: latest(['platform-abc.tar.zst']) });
-    expect(await readDocsSource({ fetch })).toEqual({
+    expect((await readRoccoSources({ fetch })).docs).toEqual({
       kind: 'none',
       origin: 'Pixelsprout/rocco-engine@v0.2.0',
       reason: 'the latest release v0.2.0 has no docs.tar.gz',
@@ -117,32 +117,32 @@ describe('readDocsSource from the latest release', () => {
 
   it('names GITHUB_TOKEN when the API refuses with 403', async () => {
     const { fetch } = fakeFetch({ [LATEST]: { status: 403, body: {} } });
-    await expect(readDocsSource({ fetch })).rejects.toThrow(/releases\/latest returned 403\. Set GITHUB_TOKEN/);
+    await expect(readRoccoSources({ fetch })).rejects.toThrow(/releases\/latest returned 403\. Set GITHUB_TOKEN/);
   });
 
   it('fails when the tree at the tag is truncated', async () => {
     const routes = { ...release(), [TREE]: { status: 200, body: { truncated: true, tree: [] } } };
     const { fetch } = fakeFetch(routes);
-    await expect(readDocsSource({ fetch })).rejects.toThrow(/tree of v0\.2\.0 is truncated/);
+    await expect(readRoccoSources({ fetch })).rejects.toThrow(/tree of v0\.2\.0 is truncated/);
   });
 
   it('names the URL when a guide file fetch fails', async () => {
     const routes = { ...release(), [`${RAW}/guide/install.md`]: { status: 404, body: '' } };
     const { fetch } = fakeFetch(routes);
-    await expect(readDocsSource({ fetch })).rejects.toThrow(`${RAW}/guide/install.md returned 404`);
+    await expect(readRoccoSources({ fetch })).rejects.toThrow(`${RAW}/guide/install.md returned 404`);
   });
 
   it('fails before any fetch when a token is required and missing', async () => {
     const { fetch, calls } = fakeFetch({});
-    await expect(readDocsSource({ fetch, requireToken: true })).rejects.toThrow(/GITHUB_TOKEN is required on Vercel/);
+    await expect(readRoccoSources({ fetch, requireToken: true })).rejects.toThrow(/GITHUB_TOKEN is required on Vercel/);
     expect(calls).toHaveLength(0);
   });
 });
 
-describe('readDocsSource from DOCS_SOURCE', () => {
+describe('the docs from DOCS_SOURCE', () => {
   it('reads guide/ and build/docs/ from a checkout, with no fetch and no markers', async () => {
     const { fetch, calls } = fakeFetch({});
-    const source = await readDocsSource({ source: CHECKOUT, fetch, requireToken: true });
+    const { docs: source } = await readRoccoSources({ source: CHECKOUT, fetch, requireToken: true });
     if (source.kind !== 'docs') throw new Error(`expected docs, got ${source.reason}`);
     expect(calls).toHaveLength(0);
     expect(source.origin).toBe(CHECKOUT);
@@ -162,7 +162,7 @@ describe('readDocsSource from DOCS_SOURCE', () => {
     const dir = await mkdtemp(join(tmpdir(), 'docs-source-'));
     await mkdir(join(dir, 'guide'));
     await writeFile(join(dir, 'guide/install.md'), '# Install');
-    const source = await readDocsSource({ source: dir });
+    const { docs: source } = await readRoccoSources({ source: dir });
     if (source.kind !== 'docs') throw new Error(`expected docs, got ${source.reason}`);
     expect(source.api).toEqual([]);
     expect(source.notes).toContain(`${dir}/build/docs has no API HTML. Run roc scripts/build.roc docs in the checkout.`);
@@ -170,6 +170,6 @@ describe('readDocsSource from DOCS_SOURCE', () => {
 
   it('fails on a checkout with no guide/ folder', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'docs-source-'));
-    await expect(readDocsSource({ source: dir })).rejects.toThrow(`Cannot read DOCS_SOURCE ${dir}/guide`);
+    await expect(readRoccoSources({ source: dir })).rejects.toThrow(`Cannot read DOCS_SOURCE ${dir}/guide`);
   });
 });

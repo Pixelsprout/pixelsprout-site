@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { readRoccoSources } from '../src/lib/docs-source';
+import { readRoccoSources } from '../src/lib/rocco-sources';
 import type { FetchLike } from '../src/lib/github';
 
 const API = 'https://api.github.com/repos/Pixelsprout/rocco-engine';

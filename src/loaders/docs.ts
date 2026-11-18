@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 import type { Loader } from 'astro/loaders';
 import { docsFilesDir } from '../integrations/docs-files';
 import { API_BASE, API_PACKAGES, DOCS_BASE, pageSlug, replaceMarkers, rewriteLinks } from '../lib/docs';
-import { readRoccoSources, type DocsSource } from '../lib/docs-source';
+import type { DocsSource } from '../lib/docs-source';
+import { readRoccoSources } from '../lib/rocco-sources';
 import { tourSiteFiles } from '../lib/tour';
 
 export const SOURCE_ID = '#source';
