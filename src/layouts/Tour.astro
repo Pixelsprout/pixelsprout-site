@@ -2,6 +2,7 @@
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/600.css';
 import { ClientRouter } from 'astro:transitions';
+import TourBar from '../components/TourBar.astro';
 import '../styles/global.css';
 
 type Props = { title: string; description: string };
@@ -20,6 +21,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <ClientRouter />
   </head>
   <body>
+    <TourBar />
     <slot />
   </body>
 </html>

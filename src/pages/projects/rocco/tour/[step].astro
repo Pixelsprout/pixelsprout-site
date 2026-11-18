@@ -188,14 +188,14 @@ const sources =
 
 <style is:global>
   html:has(.tour), html:has(.tour) body { height: 100%; overflow: hidden; }
+  html:has(.tour) body { display: grid; grid-template-rows: auto minmax(0, 1fr); }
 </style>
 
 <style>
   .unavailable { max-width: 700px; margin: 0 auto; padding: 64px 24px; display: flex; flex-direction: column; gap: 16px; }
   .unavailable p { margin: 0; }
   .tour {
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
     display: grid;
     gap: 1px;
     background: var(--edge);
@@ -308,6 +308,7 @@ const sources =
 
   @media (max-width: 800px) {
     :global(html:has(.tour)), :global(html:has(.tour) body) { overflow: auto; }
+    :global(html:has(.tour) body) { display: block; }
     .tour { height: auto; grid-template-columns: 1fr; }
     .work { grid-template-rows: auto; }
     .lesson { padding: 20px 16px; }
