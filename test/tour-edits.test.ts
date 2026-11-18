@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stepEdits, type EditStorage } from '../src/lib/tour-edits';
+import { autoRunChoice, stepEdits, type EditStorage } from '../src/lib/tour-edits';
 
 function memoryStorage(): EditStorage {
   const items = new Map<string, string>();
@@ -63,5 +63,22 @@ describe('stepEdits', () => {
       expect(edits.initial()).toBe('app [stub]');
       expect(edits.reset()).toBe('app [stub]');
     }
+  });
+});
+
+describe('autoRunChoice', () => {
+  it('is on until the reader turns it off, and the choice holds for every step', () => {
+    const storage = memoryStorage();
+    expect(autoRunChoice(storage).get()).toBe(true);
+    autoRunChoice(storage).set(false);
+    expect(autoRunChoice(storage).get()).toBe(false);
+    autoRunChoice(storage).set(true);
+    expect(autoRunChoice(storage).get()).toBe(true);
+  });
+
+  it('stays on when storage does not work', () => {
+    autoRunChoice(brokenStorage).set(false);
+    expect(autoRunChoice(brokenStorage).get()).toBe(true);
+    expect(autoRunChoice(null).get()).toBe(true);
   });
 });

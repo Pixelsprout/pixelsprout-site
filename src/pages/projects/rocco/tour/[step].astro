@@ -68,6 +68,7 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
             <span class="file">main.roc</span>
             <span class="spacer"></span>
             <button type="button" data-action="run" title="Run (Cmd/Ctrl+Enter)">Run</button>
+            <label class="auto-run" title="Run each edit after a pause in typing"><input type="checkbox" data-action="auto-run" checked /> Auto-run</label>
             <button type="button" data-action="reset">Reset</button>
             <button type="button" data-action="answer">Show answer</button>
           </div>
@@ -156,6 +157,7 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
         consoleCount: byId('tour-console-count'),
         clear: action('clear'),
         run: action('run'),
+        autoRun: action<HTMLInputElement>('auto-run'),
       });
     }
   }
@@ -207,6 +209,8 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
     cursor: pointer;
   }
   .pane-toggle { min-width: 28px; }
+  .auto-run { display: flex; gap: 4px; align-items: center; color: var(--text-muted); cursor: pointer; }
+  .auto-run input { margin: 0; accent-color: var(--sprout); }
   .editor { min-height: 0; }
   .panel-body { display: grid; overflow: hidden; background: var(--soil-deep); font-size: 13px; }
   .panel-body > [role='tabpanel'] { overflow: auto; min-height: 0; }

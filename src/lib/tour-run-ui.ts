@@ -2,6 +2,7 @@ import * as monaco from 'monaco-editor/editor/editor.api.js';
 import type { TourEditor } from './tour-editor';
 import type { TourPanes } from './tour-pane-ui';
 import type { Problem } from './tour-reports';
+import { attempt, autoRunChoice } from './tour-edits';
 import { recyclingCompiler, type WorkerReply } from './tour-recycle';
 import { runController, type Card, type PreviewPort, type PreviewState, type RunController, type RunEvent, type WorkerMessage } from './tour-run';
 
@@ -35,6 +36,7 @@ type Elements = {
   consoleCount: HTMLElement;
   clear: HTMLElement;
   run: HTMLElement;
+  autoRun: HTMLInputElement;
 };
 
 // A missing file means the deployed Tour moved on from this page's build.
@@ -277,6 +279,15 @@ export function mountTourRun(base: string, editor: TourEditor, panes: TourPanes,
       elements.stage.dataset.ended = 'frame';
     } else if (action === 'reload') location.reload();
   };
+
+  const choice = autoRunChoice(attempt(() => window.localStorage, null));
+  elements.autoRun.checked = choice.get();
+  controller.setAutoRun(elements.autoRun.checked);
+  elements.autoRun.addEventListener('change', () => {
+    choice.set(elements.autoRun.checked);
+    controller.setAutoRun(elements.autoRun.checked);
+  });
+  editor.editor.getModel()!.onDidChangeContent(() => controller.edited(editor.source()));
 
   const run = () => controller.run(editor.source(), { focus: true });
   elements.run.addEventListener('click', run);
