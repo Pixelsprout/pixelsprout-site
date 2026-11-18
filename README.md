@@ -66,13 +66,26 @@ To preview docs that are not released, set `DOCS_SOURCE` to a rocco-engine check
 the checkout first, to make the API HTML in `build/docs/`. A checkout has no `urls.json`, so the markers stay unchanged
 and the build log says so.
 
+## How the Tour artifacts get here
+
+The build takes `tour.tar.gz` from the same latest release as `docs.tar.gz`. It extracts the whole tarball to
+`/projects/rocco/tour/_r/<tag>/` and parses only its `manifest.json`, `{ buildId, tag, rocNightly }`. Tour pages get the
+manifest from `getTour()` in `src/lib/content.ts`.
+
+- If the release has no `tour.tar.gz`, the build still succeeds, and `getTour()` gives the message "The Tour is not
+  available for this release".
+- If the tarball does not extract, has no `manifest.json`, or has a manifest tag that differs from the release tag, the
+  build fails.
+- With `DOCS_SOURCE` set to a checkout, the build reads `build/tour/` in the checkout and uses the manifest tag for the
+  path. If `build/tour/` does not exist, the build still succeeds with no Tour.
+
 ## Environment variables
 
 | Name | Where | Purpose |
 |---|---|---|
 | `GITHUB_TOKEN` | Required on Vercel | Authenticates the GitHub API lookups of the latest commit and the latest release. Use a fine-grained token with no extra permissions. |
 | `DEX_SOURCE` | Optional | A URL or file path (`~/…` works) that replaces the GitHub fetch |
-| `DOCS_SOURCE` | Optional | A rocco-engine checkout (`~/…` works) that replaces the release fetch of the docs |
+| `DOCS_SOURCE` | Optional | A rocco-engine checkout (`~/…` works) that replaces the release fetch of the docs and the Tour artifacts |
 | `POSTS_DIR` | Tests only | Replaces `src/content/posts` |
 
 ## Design
