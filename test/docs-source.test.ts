@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { readRoccoSources } from '../src/lib/rocco-sources';
-import type { FetchLike } from '../src/lib/github';
+import { fakeFetch, type Route } from './fake-fetch';
 
 const API = 'https://api.github.com/repos/Pixelsprout/rocco-engine';
 const LATEST = `${API}/releases/latest`;
@@ -13,27 +13,6 @@ const RAW = 'https://raw.githubusercontent.com/Pixelsprout/rocco-engine/v0.2.0';
 const DOWNLOAD = 'https://github.com/Pixelsprout/rocco-engine/releases/download/v0.2.0/docs.tar.gz';
 const TARBALL = readFileSync(new URL('fixtures/docs.tar.gz', import.meta.url));
 const CHECKOUT = new URL('fixtures/rocco', import.meta.url).pathname;
-
-type Route = { status: number; body: unknown };
-type Call = { url: string; headers?: Record<string, string> };
-
-function fakeFetch(routes: Record<string, Route>) {
-  const calls: Call[] = [];
-  const fetch: FetchLike = async (url, init) => {
-    calls.push({ url, headers: init?.headers });
-    const route = routes[url];
-    if (!route) throw new Error(`boom: ${url}`);
-    const bytes = route.body instanceof Uint8Array ? route.body : new TextEncoder().encode(String(route.body));
-    return {
-      ok: route.status >= 200 && route.status < 300,
-      status: route.status,
-      text: async () => String(route.body),
-      json: async () => route.body,
-      arrayBuffer: async () => bytes.slice().buffer,
-    };
-  };
-  return { fetch, calls };
-}
 
 const latest = (assets: string[]): Route => ({
   status: 200,

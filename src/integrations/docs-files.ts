@@ -1,7 +1,8 @@
-import { cp, readFile, stat } from 'node:fs/promises';
+import { cp, readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
+import { exists } from '../lib/files';
 
 // Every file the docs loader writes, at its path on the site.
 export const docsFilesDir = (cacheDir: URL) => new URL('rocco-docs/', cacheDir);
@@ -27,9 +28,6 @@ export function devHeaders(path: string): Record<string, string> {
   const type = TYPES[extname(encoded ? path.slice(0, -'.br'.length) : path)] ?? 'application/octet-stream';
   return encoded ? { 'Content-Type': type, 'Content-Encoding': 'br' } : { 'Content-Type': type };
 }
-
-const exists = (path: string, kind: 'file' | 'folder' = 'file') =>
-  stat(path).then((info) => (kind === 'file' ? info.isFile() : info.isDirectory()), () => false);
 
 // Serves the files in dev and copies them into the build. Astro never sees them as pages.
 export function docsFiles(): AstroIntegration {

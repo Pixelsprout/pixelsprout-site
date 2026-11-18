@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { z } from 'astro/zod';
 import { REPO } from './github';
 
 export const DOCS_BASE = '/projects/rocco/docs/';
@@ -6,6 +7,8 @@ export const API_BASE = '/projects/rocco/api/';
 export const API_PACKAGES = ['platform', 'linalg', 'mesh', 'ui', 'camera'];
 
 export type Markers = Record<string, string>;
+
+export const docsPageSchema = z.object({ kind: z.literal('page'), path: z.string(), title: z.string(), summary: z.string(), order: z.number() });
 
 export class DocsError extends Error {
   override name = 'DocsError';

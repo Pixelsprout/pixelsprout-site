@@ -5,33 +5,13 @@ import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { readRoccoSources } from '../src/lib/rocco-sources';
-import type { FetchLike } from '../src/lib/github';
+import { fakeFetch } from './fake-fetch';
 
 const API = 'https://api.github.com/repos/Pixelsprout/rocco-engine';
 const LATEST = `${API}/releases/latest`;
 const TREE = `${API}/git/trees/v0.2.0?recursive=1`;
 const RELEASE = 'https://github.com/Pixelsprout/rocco-engine/releases/download/v0.2.0';
 const fixture = (name: string) => new Uint8Array(readFileSync(new URL(`fixtures/${name}`, import.meta.url)));
-
-type Route = { status: number; body: unknown };
-
-function fakeFetch(routes: Record<string, Route>) {
-  const calls: string[] = [];
-  const fetch: FetchLike = async (url) => {
-    calls.push(url);
-    const route = routes[url];
-    if (!route) throw new Error(`boom: ${url}`);
-    const bytes = route.body instanceof Uint8Array ? route.body : new TextEncoder().encode(String(route.body));
-    return {
-      ok: route.status >= 200 && route.status < 300,
-      status: route.status,
-      text: async () => String(route.body),
-      json: async () => route.body,
-      arrayBuffer: async () => bytes.slice().buffer,
-    };
-  };
-  return { fetch, calls };
-}
 
 const release = (tour: Uint8Array | null) => ({
   [LATEST]: {
@@ -68,7 +48,7 @@ describe('the Tour artifacts from the latest release', () => {
     const { docs, tour } = await readRoccoSources({ fetch });
     if (tour.kind !== 'tour') throw new Error(`expected the Tour, got ${tour.reason}`);
     expect(docs.kind).toBe('docs');
-    expect(calls.filter((url) => url === LATEST)).toHaveLength(1);
+    expect(calls.filter((call) => call.url === LATEST)).toHaveLength(1);
     expect(tour.origin).toBe('Pixelsprout/rocco-engine@v0.2.0');
     expect(tour.buildInfo).toEqual({ buildId: 'b7f3c2', tag: 'v0.2.0', rocNightly: 'nightly-2026-10-11-7d256b9' });
     expect(tour.files.map((f) => f.path)).toEqual(['manifest.json', 'preview/index.html', 'worker/compile.js', 'worker/compile.wasm']);

@@ -1,10 +1,5 @@
-// The Tour load and memory bench. It drives a Tour step in headless Chrome over CDP.
-//
-//   node scripts/tour-bench.mjs <Tour step URL> [--runs 10] [--json out.json]
-//
-// CHROME names the Chrome binary. The budgets assume desktop Chrome at 50 Mbps, so the
-// bench throttles the network to that. Point it at a real deploy for numbers that mean
-// something; a local server has no CDN, TLS or real latency.
+// Usage: node scripts/tour-bench.mjs <Tour step URL> [--runs 10] [--json out.json]
+// CHROME names the Chrome binary. The bench throttles to 50 Mbps, the network the budgets assume.
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

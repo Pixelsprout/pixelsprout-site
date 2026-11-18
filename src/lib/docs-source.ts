@@ -9,8 +9,7 @@ import {
   expandHome,
   fetchBytes,
   rawUrl,
-  type ApiGet,
-  type Request,
+  type Release,
 } from './github';
 import { readTarGz } from './tar';
 
@@ -58,7 +57,8 @@ function parseMarkers(data: Uint8Array, tag: string): Markers {
 
 type Tree = { truncated?: boolean; tree?: { path: string; type: string }[] };
 
-export async function readReleaseDocs(request: Request, get: ApiGet, tag: string, download: string | undefined): Promise<DocsSource> {
+export async function readReleaseDocs({ request, get, tag, download: asset }: Release): Promise<DocsSource> {
+  const download = asset(DOCS_ASSET);
   const origin = `${REPO}@${tag}`;
   if (!download) return { kind: 'none', origin, reason: `the latest release ${tag} has no ${DOCS_ASSET}` };
 

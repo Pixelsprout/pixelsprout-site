@@ -1,7 +1,10 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 
 export type FileEntry = { path: string; data: Uint8Array };
+
+export const exists = (path: string, kind: 'file' | 'folder' = 'file') =>
+  stat(path).then((info) => (kind === 'file' ? info.isFile() : info.isDirectory()), () => false);
 
 export const byPath = (a: FileEntry, b: FileEntry) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 

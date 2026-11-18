@@ -3,7 +3,7 @@ import { basename, dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Loader } from 'astro/loaders';
 import { docsFilesDir } from '../integrations/docs-files';
-import { API_BASE, API_PACKAGES, DOCS_BASE, pageSlug, replaceMarkers, rewriteLinks } from '../lib/docs';
+import { API_BASE, API_PACKAGES, DOCS_BASE, docsPageSchema, pageSlug, replaceMarkers, rewriteLinks } from '../lib/docs';
 import type { DocsSource } from '../lib/docs-source';
 import { cachedBrotli } from '../lib/brotli';
 import { readRoccoSources } from '../lib/rocco-sources';
@@ -101,7 +101,7 @@ export function docsLoader(): Loader {
         const rendered = await renderMarkdown(text);
         const data = await parseData({ id, data: { ...rendered.metadata?.frontmatter, kind: 'page', path: file.path } });
         store.set({ id, data, rendered, digest: generateDigest(text) });
-        const { title, order } = data as unknown as { title: string; order: number };
+        const { title, order } = docsPageSchema.parse(data);
         guidePages.push({ path: file.path, text: markdown, title, order });
       }
       // Without Tour artifacts there is nothing to run, so the step pages say that the Tour is not available.

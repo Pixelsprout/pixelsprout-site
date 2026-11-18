@@ -2,29 +2,11 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { readDexSource, type FetchLike } from '../src/lib/dex-source';
+import { fakeFetch } from './fake-fetch';
 
 const API = 'https://api.github.com/repos/Pixelsprout/rocco-engine/commits/main';
 const SHA = 'abc1234def5678abc1234def5678abc1234def56';
 const RAW = `https://raw.githubusercontent.com/Pixelsprout/rocco-engine/${SHA}/.dex/tasks.jsonl`;
-
-type Call = { url: string; headers?: Record<string, string> };
-
-function fakeFetch(routes: Record<string, { status: number; body: unknown }>) {
-  const calls: Call[] = [];
-  const fetch: FetchLike = async (url, init) => {
-    calls.push({ url, headers: init?.headers });
-    const route = routes[url];
-    if (!route) throw new Error(`boom: ${url}`);
-    return {
-      ok: route.status >= 200 && route.status < 300,
-      status: route.status,
-      text: async () => String(route.body),
-      json: async () => route.body,
-      arrayBuffer: async () => new TextEncoder().encode(String(route.body)).buffer,
-    };
-  };
-  return { fetch, calls };
-}
 
 describe('readDexSource', () => {
   it('pins the raw fetch to the latest main commit', async () => {

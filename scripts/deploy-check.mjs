@@ -2,8 +2,9 @@ import { createHash } from 'node:crypto';
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { brotliDecompressSync, gunzipSync } from 'node:zlib';
+import { ARTIFACTS_LIST } from '../src/lib/tour-paths.mjs';
 
-export const ARTIFACTS_LIST = '/projects/rocco/tour/artifacts.json';
+// They must match vercel.json. test/deploy-check.test.ts passes a deploy served with vercel.json.
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const BR_TYPES = { '.wasm.br': 'application/wasm', '.data.br': 'application/octet-stream' };
 

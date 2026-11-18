@@ -1,17 +1,15 @@
 import type { FileEntry } from './files';
 import { deliverTour, type Compress } from './tour-delivery';
+import { ARTIFACTS_LIST, TOUR_BASE } from './tour-paths.mjs';
 import type { TourBuildInfo, TourSource } from './tour-source';
 
-export const TOUR_BASE = '/projects/rocco/tour/';
+export { TOUR_BASE };
 export const TOUR_UNAVAILABLE = 'The Tour is not available for this release';
 
 export type Tour = { available: true; buildInfo: TourBuildInfo; base: string } | { available: false; message: string };
 
 // The build deploys only the current tag, so a new release never mixes files with an old one.
 const artifactsBase = (tag: string) => `${TOUR_BASE}_r/${tag}/`;
-
-// The post-deploy smoke test reads this list, so it needs only the site URL.
-export const ARTIFACTS_LIST = `${TOUR_BASE}artifacts.json`;
 
 export async function tourSiteFiles(source: TourSource, compress: Compress): Promise<FileEntry[]> {
   if (source.kind === 'none') return [];

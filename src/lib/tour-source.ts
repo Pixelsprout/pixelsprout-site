@@ -1,8 +1,7 @@
-import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'astro/zod';
-import { byPath, readFolder, type FileEntry } from './files';
-import { REPO, SourceError, errorMessage, expandHome, fetchBytes, type Request } from './github';
+import { byPath, exists, readFolder, type FileEntry } from './files';
+import { REPO, SourceError, errorMessage, expandHome, fetchBytes, type Release } from './github';
 import { readTarGz } from './tar';
 
 export const TOUR_ASSET = 'tour.tar.gz';
@@ -35,7 +34,8 @@ function readBuildInfo(files: FileEntry[], where: string): TourBuildInfo {
   return parsed.data;
 }
 
-export async function readReleaseTour(request: Request, tag: string, download: string | undefined): Promise<TourSource> {
+export async function readReleaseTour({ request, tag, download: asset }: Release): Promise<TourSource> {
+  const download = asset(TOUR_ASSET);
   if (!download) return { kind: 'none', reason: `the latest release ${tag} has no ${TOUR_ASSET}` };
   const where = `the ${TOUR_ASSET} of ${tag}`;
   const tarball = await fetchBytes(request, download);
@@ -53,8 +53,7 @@ export async function readReleaseTour(request: Request, tag: string, download: s
 export async function readTourCheckout(source: string): Promise<TourSource> {
   const where = join(source, 'build/tour');
   const folder = join(expandHome(source), 'build/tour');
-  const exists = await stat(folder).then((info) => info.isDirectory(), () => false);
-  if (!exists) return { kind: 'none', reason: `${where} does not exist` };
+  if (!(await exists(folder, 'folder'))) return { kind: 'none', reason: `${where} does not exist` };
   const files = await readFolder(folder, '');
   return { kind: 'tour', origin: where, buildInfo: readBuildInfo(files, where), files };
 }

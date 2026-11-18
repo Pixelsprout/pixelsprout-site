@@ -3,6 +3,7 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { dexLoader } from './loaders/dex';
 import { docsLoader } from './loaders/docs';
+import { docsPageSchema } from './lib/docs';
 import { POST_TYPE_SLUGS } from './lib/post-meta';
 import { tourBuildInfoSchema } from './lib/tour-source';
 
@@ -40,7 +41,7 @@ const garden = defineCollection({
 const docs = defineCollection({
   loader: docsLoader(),
   schema: z.discriminatedUnion('kind', [
-    z.object({ kind: z.literal('page'), path: z.string(), title: z.string(), summary: z.string(), order: z.number() }),
+    docsPageSchema,
     z.object({
       kind: z.literal('source'),
       origin: z.string(),

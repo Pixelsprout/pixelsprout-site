@@ -3,6 +3,7 @@ import Base from './Base.astro';
 import Prompt from '../components/Prompt.astro';
 import type { DocsPage } from '../lib/content';
 import { API_BASE, DOCS_BASE, docsSections, docsUrl } from '../lib/docs';
+import { TOUR_BASE } from '../lib/tour-paths.mjs';
 
 type Props = { title: string; description: string; pages: DocsPage[]; command: string };
 const { title, description, pages, command } = Astro.props;
@@ -25,6 +26,7 @@ const current = (href: string) => (path === href ? 'page' : undefined);
         </div>
       ))}
       <a class="tap" href={API_BASE} aria-current={current(API_BASE)}>API reference</a>
+      <a class="tap" href={TOUR_BASE}>Tour</a>
     </nav>
     <article>
       <Prompt path="~/rocco" command={command} />
