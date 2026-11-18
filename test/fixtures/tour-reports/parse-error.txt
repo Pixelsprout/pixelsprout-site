@@ -1,0 +1,2084 @@
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:34:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+model = { ground: Mesh.primitive(Cube), pip: 0, pos: V.zero, yaw: 0.0 }
+      ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:34:8
+
+I was parsing an expression, and this token cannot start an expression here.
+
+model = { ground: Mesh.primitive(Cube), pip: 0, pos: V.zero, yaw: 0.0 }
+      ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:34:10
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+model = { ground: Mesh.primitive(Cube), pip: 0, pos: V.zero, yaw: 0.0 }
+        ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found { here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:35:2
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+{ model, commands: [Load({ pack: "pip", assets: ["pip"] })] }
+^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found { here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:36:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+}
+^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found } here.
+This closes the current construct, so the parser was looking for the missing item before it.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:36:1
+
+I was parsing an expression, and this token cannot start an expression here.
+
+}
+^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found } here.
+This closes the current construct, so the parser was looking for the missing item before it.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:40:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+loaded : Model, Str, Manifest -> Model
+^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found loaded here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:40:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+loaded : Model, Str, Manifest -> Model
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:40:8
+
+I was parsing an expression, and this token cannot start an expression here.
+
+loaded : Model, Str, Manifest -> Model
+       ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:40:10
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+loaded : Model, Str, Manifest -> Model
+         ^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found Model here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:41:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+loaded = |model, _pack, manifest| { ..model, pip: Mesh.resolve(manifest, "pip") }
+^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found loaded here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:41:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+loaded = |model, _pack, manifest| { ..model, pip: Mesh.resolve(manifest, "pip") }
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:41:8
+
+I was parsing an expression, and this token cannot start an expression here.
+
+loaded = |model, _pack, manifest| { ..model, pip: Mesh.resolve(manifest, "pip") }
+       ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:41:10
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+loaded = |model, _pack, manifest| { ..model, pip: Mesh.resolve(manifest, "pip") }
+         ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found | here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:45:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+speed : F32
+^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found speed here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:45:7
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+speed : F32
+      ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:45:7
+
+I was parsing an expression, and this token cannot start an expression here.
+
+speed : F32
+      ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:45:9
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+speed : F32
+        ^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found F32 here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:46:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+speed = 2.5
+^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found speed here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:46:7
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+speed = 2.5
+      ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:46:7
+
+I was parsing an expression, and this token cannot start an expression here.
+
+speed = 2.5
+      ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:46:9
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+speed = 2.5
+        ^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found 2.5 here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:49:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+edge : F32
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found edge here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:49:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+edge : F32
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:49:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+edge : F32
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:49:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+edge : F32
+       ^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found F32 here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:50:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+edge = 2.7
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found edge here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:50:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+edge = 2.7
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:50:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+edge = 2.7
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:50:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+edge = 2.7
+       ^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found 2.7 here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:52:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found step here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:52:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:52:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:52:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+       ^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found Model here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected arrow target ──────────────────────────── /rocco/examples/tutorial/tour/main.roc:52:65
+
+I was parsing an arrow expression, and I expected a name or parenthesized expression after the
+arrow.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+                                                                ^
+
+The right side of this arrow form must start with a value name, tag name, or parenthesized
+expression.
+
+For example:
+    value -> next
+
+I found { here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:52:67
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+                                                                  ^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found model here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:52:73
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+                                                                        ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:52:73
+
+I was parsing an expression, and this token cannot start an expression here.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+                                                                        ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:52:75
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+                                                                          ^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found Model here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:52:91
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+                                                                                          ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:52:91
+
+I was parsing an expression, and this token cannot start an expression here.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+                                                                                          ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:52:93
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+                                                                                            ^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found List here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ──────────────────────── /rocco/examples/tutorial/tour/main.roc:52:107
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+                                                                                                          ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found } here.
+This closes the current construct, so the parser was looking for the missing item before it.
+
+── ✗ unexpected expression syntax ──────────────────── /rocco/examples/tutorial/tour/main.roc:52:107
+
+I was parsing an expression, and this token cannot start an expression here.
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Command) }
+                                                                                                          ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found } here.
+This closes the current construct, so the parser was looking for the missing item before it.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:53:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step = |model, input, _results, dt| { model: walk(model, input, dt), commands: [] }
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found step here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:53:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step = |model, input, _results, dt| { model: walk(model, input, dt), commands: [] }
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:53:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+step = |model, input, _results, dt| { model: walk(model, input, dt), commands: [] }
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:53:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+step = |model, input, _results, dt| { model: walk(model, input, dt), commands: [] }
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found | here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:56:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+walk : Model, Vocabulary.Input, F32 -> Model
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found walk here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:56:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+walk : Model, Vocabulary.Input, F32 -> Model
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:56:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+walk : Model, Vocabulary.Input, F32 -> Model
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:56:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+walk : Model, Vocabulary.Input, F32 -> Model
+       ^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found Model here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:57:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+walk = |model, input, dt| {
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found walk here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:57:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+walk = |model, input, dt| {
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:57:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+walk = |model, input, dt| {
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:57:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+walk = |model, input, dt| {
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found | here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:67:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+keep_on_ground : F32 -> F32
+^^^^^^^^^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found keep_on_ground here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:67:16
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+keep_on_ground : F32 -> F32
+               ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:67:16
+
+I was parsing an expression, and this token cannot start an expression here.
+
+keep_on_ground : F32 -> F32
+               ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:67:18
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+keep_on_ground : F32 -> F32
+                 ^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found F32 here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:68:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+keep_on_ground = |v| F32.max(-edge, F32.min(v, edge))
+^^^^^^^^^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found keep_on_ground here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:68:16
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+keep_on_ground = |v| F32.max(-edge, F32.min(v, edge))
+               ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:68:16
+
+I was parsing an expression, and this token cannot start an expression here.
+
+keep_on_ground = |v| F32.max(-edge, F32.min(v, edge))
+               ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:68:18
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+keep_on_ground = |v| F32.max(-edge, F32.min(v, edge))
+                 ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found | here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:72:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sky_light : Vocabulary.Light
+^^^^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found sky_light here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:72:11
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sky_light : Vocabulary.Light
+          ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:72:11
+
+I was parsing an expression, and this token cannot start an expression here.
+
+sky_light : Vocabulary.Light
+          ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:72:13
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sky_light : Vocabulary.Light
+            ^^^^^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found Vocabulary here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:73:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sky_light = Light.ambient({ r: 0.3, g: 0.3, b: 0.3 })
+^^^^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found sky_light here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:73:11
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sky_light = Light.ambient({ r: 0.3, g: 0.3, b: 0.3 })
+          ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:73:11
+
+I was parsing an expression, and this token cannot start an expression here.
+
+sky_light = Light.ambient({ r: 0.3, g: 0.3, b: 0.3 })
+          ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:73:13
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sky_light = Light.ambient({ r: 0.3, g: 0.3, b: 0.3 })
+            ^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found Light here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:75:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sunlight : Vocabulary.Light
+^^^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found sunlight here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:75:10
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sunlight : Vocabulary.Light
+         ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:75:10
+
+I was parsing an expression, and this token cannot start an expression here.
+
+sunlight : Vocabulary.Light
+         ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:75:12
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sunlight : Vocabulary.Light
+           ^^^^^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found Vocabulary here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:76:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sunlight = Light.directional({ x: -0.4, y: -0.8, z: -0.45 }, { r: 4.0, g: 4.0, b: 4.0 })
+^^^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found sunlight here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:76:10
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sunlight = Light.directional({ x: -0.4, y: -0.8, z: -0.45 }, { r: 4.0, g: 4.0, b: 4.0 })
+         ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:76:10
+
+I was parsing an expression, and this token cannot start an expression here.
+
+sunlight = Light.directional({ x: -0.4, y: -0.8, z: -0.45 }, { r: 4.0, g: 4.0, b: 4.0 })
+         ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:76:12
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+sunlight = Light.directional({ x: -0.4, y: -0.8, z: -0.45 }, { r: 4.0, g: 4.0, b: 4.0 })
+           ^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found Light here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:79:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+view : Model -> Vocabulary.Scene
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found view here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:79:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+view : Model -> Vocabulary.Scene
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:79:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+view : Model -> Vocabulary.Scene
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:79:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+view : Model -> Vocabulary.Scene
+       ^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found Model here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:80:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+view = |model| {
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found view here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:80:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+view = |model| {
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:80:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+view = |model| {
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:80:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+view = |model| {
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found | here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:90:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+pi : F32
+^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found pi here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:90:4
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+pi : F32
+   ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:90:4
+
+I was parsing an expression, and this token cannot start an expression here.
+
+pi : F32
+   ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:90:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+pi : F32
+     ^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found F32 here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:91:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+pi = 3.14159265
+^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found pi here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:91:4
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+pi = 3.14159265
+   ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:91:4
+
+I was parsing an expression, and this token cannot start an expression here.
+
+pi = 3.14159265
+   ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:91:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+pi = 3.14159265
+     ^^^^^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found 3.14159265 here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:93:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+near : F32, F32 -> Bool
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found near here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:93:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+near : F32, F32 -> Bool
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:93:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+near : F32, F32 -> Bool
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:93:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+near : F32, F32 -> Bool
+       ^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found F32 here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:94:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+near = |a, b| (a - b).abs() < 0.0001
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found near here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:94:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+near = |a, b| (a - b).abs() < 0.0001
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:94:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+near = |a, b| (a - b).abs() < 0.0001
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:94:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+near = |a, b| (a - b).abs() < 0.0001
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found | here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:96:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+start : Model
+^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found start here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:96:7
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+start : Model
+      ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:96:7
+
+I was parsing an expression, and this token cannot start an expression here.
+
+start : Model
+      ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:96:9
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+start : Model
+        ^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found Model here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:97:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+start = init(Config.empty).model
+^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found start here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:97:7
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+start = init(Config.empty).model
+      ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:97:7
+
+I was parsing an expression, and this token cannot start an expression here.
+
+start = init(Config.empty).model
+      ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:97:9
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+start = init(Config.empty).model
+        ^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found init here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:99:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+hold : List(Key.Key) -> Vocabulary.Input
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found hold here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:99:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+hold : List(Key.Key) -> Vocabulary.Input
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found : here.
+
+── ✗ unexpected expression syntax ────────────────────── /rocco/examples/tutorial/tour/main.roc:99:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+hold : List(Key.Key) -> Vocabulary.Input
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found : here.
+
+── ✗ expected tuple separator ────────────────────────── /rocco/examples/tutorial/tour/main.roc:99:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+hold : List(Key.Key) -> Vocabulary.Input
+       ^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found List here.
+Names that start with uppercase letters are used for tags, type names, and module names in Roc.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:100:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+hold = |keys| { ..Input.empty, held: keys.map(Key.code) }
+^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found hold here.
+Names that start with lowercase letters are value names or record field names, depending on the
+surrounding syntax.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:100:6
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+hold = |keys| { ..Input.empty, held: keys.map(Key.code) }
+     ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found = here.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:100:6
+
+I was parsing an expression, and this token cannot start an expression here.
+
+hold = |keys| { ..Input.empty, held: keys.map(Key.code) }
+     ^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found = here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:100:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+hold = |keys| { ..Input.empty, held: keys.map(Key.code) }
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found | here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:103:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+expect {
+^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found expect here.
+That word is reserved by Roc, so it cannot be used as a name in this position.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:103:1
+
+I was parsing an expression, and this token cannot start an expression here.
+
+expect {
+^^^^^^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found expect here.
+That word is reserved by Roc, so it cannot be used as a name in this position.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:103:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+expect {
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found { here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:109:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+expect {
+^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found expect here.
+That word is reserved by Roc, so it cannot be used as a name in this position.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:109:1
+
+I was parsing an expression, and this token cannot start an expression here.
+
+expect {
+^^^^^^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found expect here.
+That word is reserved by Roc, so it cannot be used as a name in this position.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:109:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+expect {
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found { here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:115:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+expect {
+^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found expect here.
+That word is reserved by Roc, so it cannot be used as a name in this position.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:115:1
+
+I was parsing an expression, and this token cannot start an expression here.
+
+expect {
+^^^^^^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found expect here.
+That word is reserved by Roc, so it cannot be used as a name in this position.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:115:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+expect {
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found { here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:121:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+expect {
+^^^^^^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found expect here.
+That word is reserved by Roc, so it cannot be used as a name in this position.
+
+── ✗ unexpected expression syntax ───────────────────── /rocco/examples/tutorial/tour/main.roc:121:1
+
+I was parsing an expression, and this token cannot start an expression here.
+
+expect {
+^^^^^^
+
+Expressions can be names, literals, tags, records, lists, tuples, lambdas, blocks, conditionals,
+matches, or function calls.
+
+For example:
+    add(1, 2)
+
+I found expect here.
+That word is reserved by Roc, so it cannot be used as a name in this position.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:121:8
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+expect {
+       ^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I found { here.
+
+── ✗ expected tuple separator ───────────────────────── /rocco/examples/tutorial/tour/main.roc:127:1
+
+I was parsing a parenthesized expression or tuple, and I expected `,` or `)`.
+
+
+^
+
+Separate tuple elements with commas and close the tuple or parenthesized expression with ).
+
+For example:
+    (x, y)
+
+I reached the end of the file before this construct was complete.
+
+── ✗ expected closing brace ─────────────────────────── /rocco/examples/tutorial/tour/main.roc:127:1
+
+I was parsing a block expression, and I expected `}` before the file ended.
+
+
+^
+
+Close the block after its final statement or expression.
+
+For example:
+    {
+        answer = 42
+        answer
+    }
+
+I reached the end of the file before this construct was complete.
+
+── ✗ expected closing brace ─────────────────────────── /rocco/examples/tutorial/tour/main.roc:127:1
+
+I was parsing a block expression, and I expected `}` before the file ended.
+
+
+^
+
+Close the block after its final statement or expression.
+
+For example:
+    {
+        answer = 42
+        answer
+    }
+
+I reached the end of the file before this construct was complete.
+
+── ✗ exposed but not defined ─────────────────────────── /rocco/examples/tutorial/tour/main.roc:1:20
+
+The module header says that loaded is exposed, but it is not defined anywhere in this module.
+
+app [init, launch, loaded, step, view] { cam: "../../../packages/camera/main.roc", linalg: "../../../packages/linalg/main.roc", mesh: "../../../packages/mesh/main.roc", pf: platform "../../../platform/main.roc", roc: "nightly-2026-11-04-2622062" }
+                   ^^^^^^
+
+You can fix this by either defining loaded in this module, or by removing it from the list of
+exposed values.
+
+── ✗ exposed but not defined ─────────────────────────── /rocco/examples/tutorial/tour/main.roc:1:28
+
+The module header says that step is exposed, but it is not defined anywhere in this module.
+
+app [init, launch, loaded, step, view] { cam: "../../../packages/camera/main.roc", linalg: "../../../packages/linalg/main.roc", mesh: "../../../packages/mesh/main.roc", pf: platform "../../../platform/main.roc", roc: "nightly-2026-11-04-2622062" }
+                           ^^^^
+
+You can fix this by either defining step in this module, or by removing it from the list of exposed
+values.
+
+── ✗ exposed but not defined ─────────────────────────── /rocco/examples/tutorial/tour/main.roc:1:34
+
+The module header says that view is exposed, but it is not defined anywhere in this module.
+
+app [init, launch, loaded, step, view] { cam: "../../../packages/camera/main.roc", linalg: "../../../packages/linalg/main.roc", mesh: "../../../packages/mesh/main.roc", pf: platform "../../../platform/main.roc", roc: "nightly-2026-11-04-2622062" }
+                                 ^^^^
+
+You can fix this by either defining view in this module, or by removing it from the list of exposed
+values.
+
+── ✗ missing platform required definition ────────────── /rocco/examples/tutorial/tour/main.roc:29:1
+
+The platform expects your app module to expose a definition named loaded, but I couldn't find one.
+
+launch = |_config| { ..Launch.default, window: { ..Launch.default.window, title: "Pip" } }
+^^^^^^
+
+loaded : Model, Str, Vocabulary.Manifest -> Model,
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Hint: Define and expose loaded in your app header.
+
+── ✗ missing platform required definition ────────────── /rocco/examples/tutorial/tour/main.roc:29:1
+
+The platform expects your app module to expose a definition named step, but I couldn't find one.
+
+launch = |_config| { ..Launch.default, window: { ..Launch.default.window, title: "Pip" } }
+^^^^^^
+
+step : Model, Vocabulary.Input, Vocabulary.QueryResults, F32 -> { model : Model, commands : List(Vocabulary.Command) },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Hint: Define and expose step in your app header.
+
+── ✗ missing platform required definition ────────────── /rocco/examples/tutorial/tour/main.roc:29:1
+
+The platform expects your app module to expose a definition named view, but I couldn't find one.
+
+launch = |_config| { ..Launch.default, window: { ..Launch.default.window, title: "Pip" } }
+^^^^^^
+
+view : Model -> Vocabulary.Scene
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Hint: Define and expose view in your app header.
+

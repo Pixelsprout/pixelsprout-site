@@ -60,6 +60,9 @@ export function assertToken(options: { token?: string; requireToken?: boolean })
 
 export type ApiGet = (path: string) => Promise<{ url: string; res: FetchResponse }>;
 
+// The latest engine release, as each source reader needs it. download is the URL of one release asset, if it has it.
+export type Release = { request: Request; get: ApiGet; tag: string; download(asset: string): string | undefined };
+
 export function githubApi(request: Request, token?: string): ApiGet {
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' };
   if (token) headers.Authorization = `Bearer ${token}`;

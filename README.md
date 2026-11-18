@@ -66,13 +66,52 @@ To preview docs that are not released, set `DOCS_SOURCE` to a rocco-engine check
 the checkout first, to make the API HTML in `build/docs/`. A checkout has no `urls.json`, so the markers stay unchanged
 and the build log says so.
 
+## How the Tour artifacts get here
+
+The build takes `tour.tar.gz` from the same latest release as `docs.tar.gz`. It extracts the whole tarball to
+`/projects/rocco/tour/_r/<tag>/` and parses only its `manifest.json`, `{ buildId, tag, rocNightly }`. Tour pages get this
+build info from `getTour()` in `src/lib/content.ts`.
+
+- If the release has no `tour.tar.gz`, the build still succeeds, and `getTour()` gives the message "The Tour is not
+  available for this release".
+- If the tarball does not extract, has no `manifest.json`, or has a manifest tag that differs from the release tag, the
+  build fails.
+- With `DOCS_SOURCE` set to a checkout, the build reads `build/tour/` in the checkout and uses the manifest tag for the
+  path. If `build/tour/` does not exist, the build still succeeds with no Tour.
+
+### How the Tour artifacts are served
+
+Vercel does not serve pre-compressed files, and it compresses `.wasm` and `.data` badly or not at all. So the build
+compresses them itself.
+
+- The build replaces each `.wasm` and `.data` file with a brotli `.br` file. It deploys no plain copy.
+- The build does not change the engine scripts. The page passes `?suffix=.br` to the compile worker and the Preview, and
+  they request `compile-worker.wasm.br`, `index.wasm.br` and `index.data.br`. `src/lib/tour-urls.ts` holds these names.
+- Quality 11 takes about 45 s for the compile worker. The build keeps each result in `node_modules/.astro/tour-brotli/`,
+  so the next build with the same artifacts is fast.
+- `vercel.json` sends `Content-Encoding: br`, the type of the plain file and `Vary: Accept-Encoding` for `.wasm.br` and
+  `.data.br`. Every file under `/projects/rocco/tour/_r/` gets `Cache-Control: public, max-age=31536000, immutable`.
+- The dev server sends the same encoding and type for a `.br` file.
+- The build writes `/projects/rocco/tour/artifacts.json`. It lists each Tour file with the SHA-256 of the bytes that a
+  browser gets after it decodes the body.
+
+To check a deploy, run `node scripts/deploy-smoke.mjs <deploy URL>`. The script reads `artifacts.json` and checks each
+file: HTTP 200, the immutable `Cache-Control`, exactly one `Content-Encoding: br` on each `.br` file, the type and `Vary`,
+no plain copy, and a body that decodes to the listed bytes. If a check fails, the script exits 1. The `deploy-smoke.yml`
+workflow runs it for each successful Vercel deployment. To stop a failed deploy going live, make that check a required
+Deployment Check in the Vercel project. Set `VERCEL_AUTOMATION_BYPASS_SECRET` to reach a protected preview.
+
+To check the load and memory budgets, run `node scripts/tour-bench.mjs <Tour step URL>` against a deploy. It needs Chrome
+with WebGPU (`CHROME` names the binary). It reports the cold and the repeat visit to the first frame at 50 Mbps, a warm
+Run, the compile worker peak and the Chrome peak. It exits 1 only if the compile worker goes over 1 GiB.
+
 ## Environment variables
 
 | Name | Where | Purpose |
 |---|---|---|
 | `GITHUB_TOKEN` | Required on Vercel | Authenticates the GitHub API lookups of the latest commit and the latest release. Use a fine-grained token with no extra permissions. |
 | `DEX_SOURCE` | Optional | A URL or file path (`~/…` works) that replaces the GitHub fetch |
-| `DOCS_SOURCE` | Optional | A rocco-engine checkout (`~/…` works) that replaces the release fetch of the docs |
+| `DOCS_SOURCE` | Optional | A rocco-engine checkout (`~/…` works) that replaces the release fetch of the docs and the Tour artifacts |
 | `POSTS_DIR` | Tests only | Replaces `src/content/posts` |
 
 ## Design

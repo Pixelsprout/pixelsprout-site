@@ -1,65 +1,50 @@
-import { readFile, readdir } from 'node:fs/promises';
-import { join, relative, sep } from 'node:path';
+import { join } from 'node:path';
 import type { Markers } from './docs';
+import { byPath, readFolder, type FileEntry } from './files';
 import {
   REPO,
   SourceError,
   apiError,
-  assertToken,
   errorMessage,
   expandHome,
   fetchBytes,
-  githubApi,
   rawUrl,
-  requester,
-  type FetchLike,
+  type Release,
 } from './github';
-import { readTarGz, type TarFile } from './tar';
-
-export type DocsFile = TarFile;
+import { readTarGz } from './tar';
 
 export type DocsSource =
   | { kind: 'none'; origin: string; reason: string }
-  | { kind: 'docs'; origin: string; ref: string; guide: DocsFile[]; api: DocsFile[]; markers: Markers | null; notes: string[] };
+  | {
+      kind: 'docs';
+      origin: string;
+      ref: string;
+      guide: FileEntry[];
+      api: FileEntry[];
+      sources: FileEntry[];
+      markers: Markers | null;
+      notes: string[];
+    };
 
-export type DocsSourceOptions = {
-  source?: string;
-  token?: string;
-  requireToken?: boolean;
-  timeoutMs?: number;
-  fetch?: FetchLike;
-};
+export const DOCS_ASSET = 'docs.tar.gz';
 
-const DOCS_ASSET = 'docs.tar.gz';
+// The Tour starts each step from a chapter app of the Tutorial.
+const CHAPTER_APP = /^examples\/tutorial\/[^/]+\/main\.roc$/;
 
-const byPath = (a: DocsFile, b: DocsFile) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
-
-async function readFolder(dir: string, prefix: string): Promise<DocsFile[]> {
-  const entries = await readdir(dir, { recursive: true, withFileTypes: true });
-  const files = await Promise.all(
-    entries
-      .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))
-      .map(async (entry) => {
-        const path = join(entry.parentPath, entry.name);
-        const name = relative(dir, path).split(sep).join('/');
-        return { path: prefix ? `${prefix}/${name}` : name, data: new Uint8Array(await readFile(path)) };
-      }),
-  );
-  return files.sort(byPath);
-}
-
-async function readCheckout(source: string): Promise<DocsSource> {
+export async function readDocsCheckout(source: string): Promise<DocsSource> {
   const root = expandHome(source);
-  let guide: DocsFile[];
+  let guide: FileEntry[];
   try {
     guide = await readFolder(join(root, 'guide'), 'guide');
   } catch (error) {
     throw new SourceError(`Cannot read DOCS_SOURCE ${join(source, 'guide')}: ${errorMessage(error)}`);
   }
   const api = await readFolder(join(root, 'build/docs'), '').catch(() => []);
+  const examples = await readFolder(join(root, 'examples/tutorial'), 'examples/tutorial').catch(() => []);
+  const sources = examples.filter((file) => CHAPTER_APP.test(file.path));
   const notes = [`${source} is a checkout, not a release, so the markers stay unchanged`];
   if (api.length === 0) notes.push(`${join(source, 'build/docs')} has no API HTML. Run roc scripts/build.roc docs in the checkout.`);
-  return { kind: 'docs', origin: source, ref: 'main', guide, api, markers: null, notes };
+  return { kind: 'docs', origin: source, ref: 'main', guide, api, sources, markers: null, notes };
 }
 
 function parseMarkers(data: Uint8Array, tag: string): Markers {
@@ -70,33 +55,25 @@ function parseMarkers(data: Uint8Array, tag: string): Markers {
   return markers as Markers;
 }
 
-type Release = { tag_name?: unknown; assets?: { name?: unknown; browser_download_url?: unknown }[] };
 type Tree = { truncated?: boolean; tree?: { path: string; type: string }[] };
 
-// "latest" skips prereleases, so a release that failed its bundle test never feeds the site.
-async function readRelease(options: DocsSourceOptions): Promise<DocsSource> {
-  assertToken(options);
-  const request = requester(options.fetch, options.timeoutMs);
-  const get = githubApi(request, options.token);
-
-  const latest = await get('releases/latest');
-  if (latest.res.status === 404) return { kind: 'none', origin: REPO, reason: `${REPO} has no release` };
-  if (!latest.res.ok) throw apiError(latest.url, latest.res.status);
-  const { tag_name: tag, assets = [] } = (await latest.res.json()) as Release;
-  if (typeof tag !== 'string') throw new SourceError(`GET ${latest.url} returned no tag_name`);
+export async function readReleaseDocs({ request, get, tag, download: asset }: Release): Promise<DocsSource> {
+  const download = asset(DOCS_ASSET);
   const origin = `${REPO}@${tag}`;
-  const download = assets.find((asset) => asset.name === DOCS_ASSET)?.browser_download_url;
-  if (typeof download !== 'string') return { kind: 'none', origin, reason: `the latest release ${tag} has no ${DOCS_ASSET}` };
+  if (!download) return { kind: 'none', origin, reason: `the latest release ${tag} has no ${DOCS_ASSET}` };
 
   const tree = await get(`git/trees/${encodeURIComponent(tag)}?recursive=1`);
   if (!tree.res.ok) throw apiError(tree.url, tree.res.status);
   const { truncated, tree: entries = [] } = (await tree.res.json()) as Tree;
   if (truncated) throw new SourceError(`GET ${tree.url}: the tree of ${tag} is truncated`);
-  const paths = entries.filter((e) => e.type === 'blob' && e.path.startsWith('guide/')).map((e) => e.path);
+  const blobs = entries.filter((e) => e.type === 'blob').map((e) => e.path);
+  const fetchAll = (paths: string[]) =>
+    Promise.all(paths.map(async (path) => ({ path, data: await fetchBytes(request, rawUrl(encodeURIComponent(tag), encodeURI(path))) })));
 
-  const [tarball, guide] = await Promise.all([
+  const [tarball, guide, sources] = await Promise.all([
     fetchBytes(request, download),
-    Promise.all(paths.map(async (path) => ({ path, data: await fetchBytes(request, rawUrl(encodeURIComponent(tag), encodeURI(path))) }))),
+    fetchAll(blobs.filter((path) => path.startsWith('guide/'))),
+    fetchAll(blobs.filter((path) => CHAPTER_APP.test(path))),
   ]);
   const files = readTarGz(tarball);
   const urls = files.find((file) => file.path === 'urls.json');
@@ -107,11 +84,8 @@ async function readRelease(options: DocsSourceOptions): Promise<DocsSource> {
     ref: tag,
     guide: guide.sort(byPath),
     api: files.filter((file) => file !== urls).sort(byPath),
+    sources: sources.sort(byPath),
     markers: parseMarkers(urls.data, tag),
     notes: [],
   };
-}
-
-export function readDocsSource(options: DocsSourceOptions = {}): Promise<DocsSource> {
-  return options.source ? readCheckout(options.source) : readRelease(options);
 }

@@ -1,0 +1,27 @@
+── ● unused variable ─────────────────────────────────── /rocco/examples/tutorial/tour/main.roc:34:2
+
+Variable unused is defined here and then never used.
+
+unused = 1
+^^^^^^
+
+If you don't need this variable, prefix it with an underscore like _unused to suppress this warning.
+
+── ✗ type mismatch ──────────────────────────────────── /rocco/examples/tutorial/tour/main.roc:29:82
+
+This number is being used where a non-number type is needed.
+
+launch = |_config| { ..Launch.default, window: { ..Launch.default.window, title: 42 } }
+                                                                                 ^^
+
+The type was determined to be non-numeric here:
+
+launch = |_config| { ..Launch.default, window: { ..Launch.default.window, title: 42 } }
+                                                   ^^^^^^^^^^^^^^
+
+Other code expects this to have the type:
+
+    Str
+
+Hint: Write the number in quotes to make it a Str, or convert it with .to_str().
+

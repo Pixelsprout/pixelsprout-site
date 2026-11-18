@@ -83,6 +83,30 @@ check(read('projects/rocco/api/platform/styles.css').includes("font-family: 'IBM
 check(read('projects/rocco/api/platform/index.html') === readFileSync('test/fixtures/rocco/build/docs/platform/index.html', 'utf8'), 'the API HTML changed on the way');
 check(read('projects/rocco/index.html').includes('href="/projects/rocco/docs/"'), 'the rocco page does not link to the docs');
 check(read('projects/rocco/index.html').includes('href="/projects/rocco/api/"'), 'the rocco page does not link to the API');
+check(read('projects/rocco/index.html').includes('href="/projects/rocco/tour/"'), 'the rocco page does not link to the Tour');
+check(
+  read('projects/rocco/tour/_r/v0.2.0-dev/preview/index.html') === readFileSync('test/fixtures/rocco/build/tour/preview/index.html', 'utf8'),
+  'the Tour artifacts are not at the tag path',
+);
+check(existsSync('dist/projects/rocco/tour/_r/v0.2.0-dev/manifest.json'), 'the Tour artifacts lack manifest.json');
+check(readdirSync('dist/projects/rocco/tour/_r').join() === 'v0.2.0-dev', 'the build deploys a Tour tag other than the current one');
+check(
+  existsSync('dist/projects/rocco/tour/_r/v0.2.0-dev/preview/index.wasm.br') && !existsSync('dist/projects/rocco/tour/_r/v0.2.0-dev/preview/index.wasm'),
+  'the build deploys a plain .wasm file or no .wasm.br file',
+);
+check(
+  read('projects/rocco/tour/_r/v0.2.0-dev/preview/index.js') === readFileSync('test/fixtures/rocco/build/tour/preview/index.js', 'utf8'),
+  'the build changes the engine scripts; the page names the .br files instead',
+);
+check(JSON.parse(read('projects/rocco/tour/artifacts.json')).tag === 'v0.2.0-dev', 'the build lacks the Tour artifacts list');
+const step = read('projects/rocco/tour/01-cube/index.html');
+check(step.includes('Press Run in the Tour.') && !step.includes('roc main.roc'), 'the Tour step does not apply the tour markers');
+check(step.includes('href="/projects/rocco/docs/install/"'), 'the Tour step does not link to the Guide');
+check(step.includes('href="/projects/rocco/tour/"'), 'the Tour step lacks the Contents link');
+check(!step.includes('class="site-header'), 'the Tour step uses the site layout');
+check(read('projects/rocco/tour/index.html').includes('href="/projects/rocco/tour/01-cube/"'), 'the Tour contents do not list the step');
+const docsChapter = read('projects/rocco/docs/tutorial/01-cube/index.html');
+check(docsChapter.includes('roc main.roc') && docsChapter.includes('<!-- tour-only\nPress Run in the Tour.\n-->'), 'the Guide page shows Tour text');
 
 build({ POSTS_DIR: 'test/fixtures/empty-posts', DOCS_SOURCE: 'test/fixtures/empty-docs' });
 
@@ -91,5 +115,7 @@ check(read('devlog/index.html').includes('nothing published yet'), '/devlog/ lac
 check(read('rss.xml').includes('<channel>'), 'rss.xml is not a feed');
 check(read('projects/rocco/docs/index.html').includes('No release has docs yet.'), '/projects/rocco/docs/ lacks the empty state');
 check(read('projects/rocco/api/index.html').includes('No release has docs yet.'), '/projects/rocco/api/ lacks the empty state');
+check(!existsSync('dist/projects/rocco/tour/_r'), 'a build with no Tour artifacts has a Tour artifacts folder');
+check(read('projects/rocco/tour/index.html').includes('The Tour is not available for this release.'), '/projects/rocco/tour/ lacks the unavailable state');
 
 console.log('smoke: ok');

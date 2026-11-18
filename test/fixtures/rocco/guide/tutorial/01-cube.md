@@ -9,3 +9,11 @@ order: 1
 You installed Roc in [Install](../install.md).
 
 ![The cube](../images/cube.png)
+
+<!-- tour:skip -->
+Run `roc main.roc` in a terminal.
+<!-- /tour:skip -->
+
+<!-- tour-only
+Press Run in the Tour.
+-->

@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { z } from 'astro/zod';
 import { REPO } from './github';
 
 export const DOCS_BASE = '/projects/rocco/docs/';
@@ -6,6 +7,8 @@ export const API_BASE = '/projects/rocco/api/';
 export const API_PACKAGES = ['platform', 'linalg', 'mesh', 'ui', 'camera'];
 
 export type Markers = Record<string, string>;
+
+export const docsPageSchema = z.object({ kind: z.literal('page'), path: z.string(), title: z.string(), summary: z.string(), order: z.number() });
 
 export class DocsError extends Error {
   override name = 'DocsError';
@@ -30,7 +33,7 @@ export const pageSlug = (path: string) => path.replace(/^guide\//, '').replace(/
 export const docsUrl = (slug: string) => (slug ? `${DOCS_BASE}${slug}/` : DOCS_BASE);
 
 // Resolves a link as GitHub does for the file at `page`, then maps it to the site.
-function resolveLink(href: string, page: string, ref: string): string {
+function resolveLink(href: string, page: string, ref: string, pageUrl: (slug: string) => string): string {
   if (href === '' || /^([a-z][a-z0-9+.-]*:|[#/])/i.test(href)) return href;
   const split = href.search(/[?#]/);
   const path = split === -1 ? href : href.slice(0, split);
@@ -40,7 +43,7 @@ function resolveLink(href: string, page: string, ref: string): string {
 
   if (target === 'guide' || target.startsWith('guide/')) {
     const rest = target.slice('guide/'.length);
-    if (rest.endsWith('.md')) return docsUrl(pageSlug(target)) + suffix;
+    if (rest.endsWith('.md')) return pageUrl(pageSlug(target)) + suffix;
     if (!posix.extname(rest)) return docsUrl(rest) + suffix;
     return DOCS_BASE + rest + suffix;
   }
@@ -69,8 +72,8 @@ function rewriteText(text: string, resolve: (href: string) => string): string {
 
 // Rewrites the Markdown before Astro renders it, because Astro turns a relative image into an import of a local file.
 // Fenced code and code spans keep their text.
-export function rewriteLinks(markdown: string, page: string, ref: string): string {
-  const resolve = (href: string) => resolveLink(href, page, ref);
+export function rewriteLinks(markdown: string, page: string, ref: string, pageUrl = docsUrl): string {
+  const resolve = (href: string) => resolveLink(href, page, ref, pageUrl);
   let fence: string | null = null;
   return markdown
     .split('\n')

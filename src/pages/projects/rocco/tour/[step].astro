@@ -1,0 +1,322 @@
+---
+import { render } from 'astro:content';
+import Tour from '../../../../layouts/Tour.astro';
+import { getDocs, getTour, getTourSteps, type TourStepEntry } from '../../../../lib/content';
+import { TOUR_BASE } from '../../../../lib/tour';
+import { DEFAULT_LAYOUT, template } from '../../../../lib/tour-panes';
+import { tourUrl } from '../../../../lib/tour-steps';
+
+type Link = { slug: string; title: string };
+type Props =
+  | { kind: 'step'; step: TourStepEntry; base: string; previous?: Link; next?: Link }
+  | { kind: 'unavailable'; title: string; message: string };
+
+export async function getStaticPaths() {
+  const tour = await getTour();
+  if (tour.available) {
+    const steps = await getTourSteps();
+    const link = (step?: TourStepEntry) => step && { slug: step.data.slug, title: step.data.title };
+    return steps.map((step, i) => ({
+      params: { step: step.data.slug },
+      props: { kind: 'step' as const, step, base: tour.base, previous: link(steps[i - 1]), next: link(steps[i + 1]) },
+    }));
+  }
+  // Keeps the step URLs alive, so a bookmark explains why there is no Tour.
+  const { pages } = await getDocs();
+  return pages
+    .filter((page) => page.slug.startsWith('tutorial/'))
+    .map((page) => ({
+      params: { step: page.slug.slice('tutorial/'.length) },
+      props: { kind: 'unavailable' as const, title: page.title, message: tour.message },
+    }));
+}
+
+const props = Astro.props;
+const step = props.kind === 'step' ? props.step : null;
+const { Content } = step ? await render(step) : { Content: null };
+const grid = template(DEFAULT_LAYOUT);
+const gridStyle = `--tour-columns: ${grid.columns}; --work-rows: ${grid.rows}`;
+const sources =
+  step &&
+  JSON.stringify({ slug: step.data.slug, start: step.data.start, answer: step.data.answer })
+    // Escapes "<" so a source with </script> cannot end the data block.
+    .replace(/</g, '\\u003c');
+---
+{props.kind === 'unavailable' ? (
+  <Tour title={props.title} description="The rocco Tour is not available for this release.">
+    <main class="unavailable">
+      <h1>{props.title}</h1>
+      <p>{props.message}.</p>
+      <p><a class="tap" href="/projects/rocco/docs/">Read the Guide</a></p>
+    </main>
+  </Tour>
+) : (
+  <Tour title={props.step.data.title} description={`A step of the rocco Tour: ${props.step.data.title}`}>
+    <div class="tour" style={gridStyle} data-base={props.base}>
+      <div class="side" data-pane="lesson">
+        <article class="lesson prose pane-body" id="tour-lesson">{Content && <Content />}</article>
+        <nav class="nav" aria-label="Tour steps">
+          <button type="button" class="pane-toggle" data-toggle="lesson" aria-controls="tour-lesson" aria-expanded="true" aria-label="Collapse the lesson">-</button>
+          {props.previous && (
+            <a class="tap" rel="prev" href={tourUrl(props.previous.slug)} title={props.previous.title} aria-label={`Back: ${props.previous.title}`}>
+              &lt; Back
+            </a>
+          )}
+          <a class="tap contents" href={TOUR_BASE}>Contents</a>
+          {props.next && (
+            <a class="tap next" rel="next" href={tourUrl(props.next.slug)} title={props.next.title} aria-label={`Next: ${props.next.title}`}>
+              Next &gt;
+            </a>
+          )}
+        </nav>
+        <div class="edge" data-edge="lesson" role="separator" aria-orientation="vertical" aria-label="Resize the lesson" tabindex="0"></div>
+      </div>
+
+      <div class="work">
+        <section class="editor-pane" data-pane="editor" aria-label="Editor">
+          <div class="toolbar">
+            <button type="button" class="pane-toggle" data-toggle="editor" aria-controls="tour-editor" aria-expanded="true" aria-label="Collapse the editor">-</button>
+            <span class="file">main.roc</span>
+            <span class="spacer"></span>
+            <button type="button" data-action="run" title="Run (Cmd/Ctrl+Enter)">Run</button>
+            <label class="auto-run" title="Run each edit after a pause in typing"><input type="checkbox" data-action="auto-run" checked /> Auto-run</label>
+            <button type="button" data-action="reset">Reset</button>
+            <button type="button" data-action="answer">Show answer</button>
+          </div>
+          <div class="editor pane-body" id="tour-editor"></div>
+        </section>
+
+        <section class="panel" data-pane="panel" data-tab="problems" aria-label="Problems and Console">
+          <div class="edge" data-edge="panel" role="separator" aria-orientation="horizontal" aria-label="Resize the panel" tabindex="0"></div>
+          <div class="bar">
+            <button type="button" class="pane-toggle" data-toggle="panel" aria-controls="tour-panel" aria-expanded="true" aria-label="Collapse the panel">-</button>
+            <div class="tabs" role="tablist">
+              <button type="button" role="tab" data-tab="problems" aria-controls="tour-problems" aria-selected="true">Problems <b class="count" id="tour-problem-count"></b></button>
+              <button type="button" role="tab" data-tab="console" aria-controls="tour-console" aria-selected="false">Console <b class="count" id="tour-console-count"></b></button>
+            </div>
+            <span class="spacer"></span>
+            <button type="button" data-action="clear">Clear</button>
+          </div>
+          <div class="panel-body pane-body" id="tour-panel">
+            <div role="tabpanel" id="tour-problems" aria-label="Problems"></div>
+            <ul role="tabpanel" id="tour-console" class="console" aria-label="Console" hidden></ul>
+          </div>
+        </section>
+
+        <section class="preview" data-pane="preview" aria-label="Preview">
+          <div class="edge" data-edge="preview" role="separator" aria-orientation="horizontal" aria-label="Resize the Preview" tabindex="0"></div>
+          <div class="bar">
+            <button type="button" class="pane-toggle" data-toggle="preview" aria-controls="tour-stage" aria-expanded="true" aria-label="Collapse the Preview">-</button>
+            <span>Preview</span>
+            <span class="spacer"></span>
+            <span class="status" id="tour-status" aria-live="polite"></span>
+            <button type="button" data-action="restart" title="Start the game again from init">Restart</button>
+            <button type="button" data-action="expand" aria-pressed="false">Expand</button>
+          </div>
+          <div class="stage pane-body" id="tour-stage" transition:persist="tour-stage">
+            <p class="note">The game runs here.</p>
+            <div class="card" id="tour-card" role="alert" hidden>
+              <h3></h3>
+              <pre></pre>
+              <div class="actions">
+                <button type="button" data-card-action="restart">Restart</button>
+                <button type="button" data-card-action="dismiss">Show last frame</button>
+                <button type="button" data-card-action="reload">Reload</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <script type="application/json" id="tour-step" set:html={sources} />
+  </Tour>
+)}
+
+<script>
+  import { mountTourEditor, type TourEditor } from '../../../../lib/tour-editor';
+  import { mountTourPanes, type TourPanes } from '../../../../lib/tour-pane-ui';
+
+  import { leaveTourRun, mountTourRun } from '../../../../lib/tour-run-ui';
+
+  // ClientRouter runs this module once per visit. Each Tour step mounts on astro:page-load and unmounts before the swap.
+  let mounted: TourEditor | null = null;
+  let panes: TourPanes | null = null;
+
+  async function mountStep() {
+    const tour = document.querySelector<HTMLElement>('.tour');
+    const stepPanes = tour && mountTourPanes(tour);
+    panes = stepPanes;
+
+    const data = document.getElementById('tour-step');
+    const host = document.getElementById('tour-editor');
+    if (tour && stepPanes && data && host) {
+      const editor = await mountTourEditor(host, JSON.parse(data.textContent!));
+      // The reader left while Monaco loaded.
+      if (!host.isConnected) return editor.editor.dispose();
+      mounted = editor;
+      const byId = (id: string) => document.getElementById(id)!;
+      const action = <T extends HTMLElement = HTMLElement>(name: string) => document.querySelector<T>(`[data-action="${name}"]`)!;
+      action('reset').addEventListener('click', () => editor.reset());
+      action('answer').addEventListener('click', () => editor.showAnswer());
+      mountTourRun(tour.dataset.base!, editor, stepPanes, {
+        stage: byId('tour-stage'),
+        status: byId('tour-status'),
+        restart: action<HTMLButtonElement>('restart'),
+        card: byId('tour-card'),
+        panel: document.querySelector<HTMLElement>('section.panel')!,
+        problems: byId('tour-problems'),
+        count: byId('tour-problem-count'),
+        console: byId('tour-console'),
+        consoleCount: byId('tour-console-count'),
+        clear: action('clear'),
+        run: action('run'),
+        autoRun: action<HTMLInputElement>('auto-run'),
+      });
+    }
+  }
+
+  document.addEventListener('astro:page-load', mountStep);
+  document.addEventListener('astro:before-swap', () => {
+    leaveTourRun();
+    panes?.close();
+    panes = null;
+    mounted?.editor.getModel()?.dispose();
+    mounted?.editor.dispose();
+    mounted = null;
+  });
+</script>
+
+<style is:global>
+  html:has(.tour), html:has(.tour) body { height: 100%; overflow: hidden; }
+  html:has(.tour) body { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+</style>
+
+<style>
+  .unavailable { max-width: 700px; margin: 0 auto; padding: 64px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .unavailable p { margin: 0; }
+  .tour {
+    height: 100%;
+    display: grid;
+    gap: 1px;
+    background: var(--edge);
+    grid-template-columns: var(--tour-columns);
+  }
+  .tour > *, .work > * { background: var(--soil); min-width: 0; min-height: 0; }
+  .tour[data-dragging] { user-select: none; }
+  .tour[data-dragging] :global(iframe) { pointer-events: none; }
+  .side { position: relative; display: grid; grid-template-rows: 1fr auto; }
+  .lesson { overflow: auto; padding: 24px 32px; font-size: 15px; }
+  .lesson :global(h1) { font-size: 40px; }
+  .nav { display: flex; align-items: center; gap: 16px; padding: 0 16px; font-size: 14px; background: var(--soil-bar); }
+  .nav .next { margin-left: auto; text-align: right; }
+  /* An auto column grows to Monaco's own inline width and never shrinks back, so the editor and its toolbar
+     run off the window when the window narrows or the lesson widens. */
+  .work, .editor-pane, .panel, .preview { grid-template-columns: minmax(0, 1fr); }
+  .work { display: grid; gap: 1px; background: var(--edge); grid-template-rows: var(--work-rows); align-content: start; }
+  .editor-pane, .panel, .preview { position: relative; display: grid; grid-template-rows: auto 1fr; }
+  .toolbar, .bar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: var(--soil-bar); font-size: 13px; }
+  .bar { padding: 4px 10px; }
+  .spacer { flex: 1; }
+  .toolbar button, .bar button, .nav button {
+    font: inherit;
+    font-size: 13px;
+    background: var(--soil-raised);
+    color: var(--text);
+    border: 1px solid var(--edge);
+    padding: 3px 10px;
+    cursor: pointer;
+  }
+  .pane-toggle { min-width: 28px; }
+  .auto-run { display: flex; gap: 4px; align-items: center; color: var(--text-muted); cursor: pointer; }
+  .auto-run input { margin: 0; accent-color: var(--sprout); }
+  .editor { min-height: 0; }
+  .panel-body { display: grid; overflow: hidden; background: var(--soil-deep); font-size: 13px; }
+  .panel-body > [role='tabpanel'] { overflow: auto; min-height: 0; }
+  .panel-body > [hidden] { display: none; }
+  .tabs { display: flex; gap: 2px; }
+  .bar .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-muted); }
+  .bar .tabs button[aria-selected='true'] { color: var(--text); border-bottom-color: var(--sprout); }
+  .panel:not([data-tab='console']) [data-action='clear'] { display: none; }
+  .bar button:disabled { opacity: 0.5; cursor: default; }
+  .console { list-style: none; margin: 0; padding: 4px 0; font-family: var(--font-mono, monospace); font-size: 12px; }
+  .console :global(li) { display: flex; gap: 12px; padding: 1px 12px; }
+  .console :global(.kind) { flex: none; width: 4.5em; color: var(--text-muted); }
+  .console :global(.text) { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .console :global(.repeat) { flex: none; margin-left: auto; color: var(--text-muted); }
+  .console :global(.expect .kind), .console :global(.crash), .console :global(.stopped) { color: var(--clay); }
+  .card {
+    position: absolute;
+    z-index: 3;
+    max-width: min(80%, 560px);
+    padding: 14px 18px;
+    background: var(--soil);
+    border: 2px solid var(--clay);
+    font-size: 13px;
+  }
+  .card[hidden] { display: none; }
+  .card h3 { margin: 0 0 6px; color: var(--clay); font-size: 15px; }
+  .card pre { margin: 0 0 10px; white-space: pre-wrap; font-size: 12px; }
+  .card pre:empty { display: none; }
+  .card .actions { display: flex; gap: 8px; }
+  .card button { font: inherit; background: var(--soil-raised); color: var(--text); border: 1px solid var(--edge); padding: 3px 10px; cursor: pointer; }
+  .card[data-kind='stale'] [data-card-action='restart'], .card[data-kind='stale'] [data-card-action='dismiss'] { display: none; }
+  .card:not([data-kind='stale']) [data-card-action='reload'] { display: none; }
+  .stage[data-ended] :global(iframe) { pointer-events: none; }
+  .stage[data-ended='card'] :global(iframe) { filter: grayscale(1) brightness(0.45); }
+  .stage { position: relative; background: #000; display: grid; place-items: center; }
+  .note { margin: 0; padding: 16px; max-width: 480px; text-align: center; color: var(--text-muted); }
+  .status { color: var(--text-muted); }
+  .count:empty { display: none; }
+  .stage :global(iframe) { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  /* Not visibility: hidden, so the new Preview still draws its first frame behind the old one. */
+  .stage :global(iframe.starting) { opacity: 0; pointer-events: none; }
+  .panel-body :global(.problems) { list-style: none; margin: 0; padding: 0; }
+  .panel-body :global(.problems li) { border-bottom: 1px solid var(--edge); }
+  .panel-body :global(.problems .head) {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    padding: 6px 12px;
+    font: inherit;
+    text-align: left;
+    color: var(--text);
+    background: none;
+    border: 0;
+  }
+  .panel-body :global(button.head) { cursor: pointer; }
+  .panel-body :global(button.head:hover) { background: var(--soil-raised); }
+  .panel-body :global(.problems .where) { color: var(--text-muted); }
+  .panel-body :global(.problems .title) { font-weight: 600; }
+  .panel-body :global(.problems pre) { margin: 0; padding: 0 12px 8px; font-size: 12px; white-space: pre; overflow-x: auto; }
+
+  [data-collapsed] > .pane-body { display: none; }
+  .side[data-collapsed] { grid-template-rows: 1fr; }
+  .side[data-collapsed] .nav { align-items: end; padding: 8px 4px; }
+  .side[data-collapsed] .nav a { display: none; }
+
+  /* The edge sits over the border between two panes, so it takes no grid track. */
+  .edge { position: absolute; z-index: 2; touch-action: none; }
+  .edge:hover, .edge:focus-visible { background: var(--sprout); outline: none; }
+  [data-edge='lesson'] { top: 0; bottom: 0; right: -4px; width: 7px; cursor: col-resize; }
+  .side[data-collapsed] [data-edge='lesson'] { display: none; }
+  [data-edge='panel'], [data-edge='preview'] { left: 0; right: 0; top: -4px; height: 7px; cursor: row-resize; }
+  .edge[hidden] { display: none; }
+
+  .tour[data-expanded] .preview { position: fixed; inset: 0; z-index: 10; }
+  .tour[data-expanded] .preview > .pane-body { display: grid; }
+  .tour[data-expanded] .preview .pane-toggle, .tour[data-expanded] .preview .edge { display: none; }
+
+  @media (max-width: 800px) {
+    :global(html:has(.tour)), :global(html:has(.tour) body) { overflow: auto; }
+    :global(html:has(.tour) body) { display: block; }
+    .tour { height: auto; grid-template-columns: 1fr; }
+    .work { grid-template-rows: auto; }
+    .lesson { padding: 20px 16px; }
+    .nav { flex-wrap: wrap; padding: 8px 16px; }
+    .side[data-collapsed] .nav a { display: inline-flex; }
+    .editor-pane:not([data-collapsed]) { height: 60vh; }
+    .panel:not([data-collapsed]) { height: 160px; }
+    .preview:not([data-collapsed]) { height: 38vh; }
+    .edge { display: none; }
+  }
+</style>

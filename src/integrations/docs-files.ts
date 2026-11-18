@@ -1,15 +1,18 @@
-import { cp, readFile, stat } from 'node:fs/promises';
+import { cp, readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
+import { exists } from '../lib/files';
 
-// The docs loader writes the roc docs HTML, the guide images and the fonts here, each at its path on the site.
+// Every file the docs loader writes, at its path on the site.
 export const docsFilesDir = (cacheDir: URL) => new URL('rocco-docs/', cacheDir);
 
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.wasm': 'application/wasm',
   '.json': 'application/json',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
@@ -20,8 +23,11 @@ const TYPES: Record<string, string> = {
   '.woff2': 'font/woff2',
 };
 
-const exists = (path: string, kind: 'file' | 'folder' = 'file') =>
-  stat(path).then((info) => (kind === 'file' ? info.isFile() : info.isDirectory()), () => false);
+export function devHeaders(path: string): Record<string, string> {
+  const encoded = path.endsWith('.br');
+  const type = TYPES[extname(encoded ? path.slice(0, -'.br'.length) : path)] ?? 'application/octet-stream';
+  return encoded ? { 'Content-Type': type, 'Content-Encoding': 'br' } : { 'Content-Type': type };
+}
 
 // Serves the files in dev and copies them into the build. Astro never sees them as pages.
 export function docsFiles(): AstroIntegration {
@@ -50,7 +56,7 @@ export function docsFiles(): AstroIntegration {
           }
           const file = pathname.endsWith('/') ? index : path;
           if (!(await exists(file))) return next();
-          res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream' }).end(await readFile(file));
+          res.writeHead(200, devHeaders(file)).end(await readFile(file));
         });
       },
       'astro:build:done': async ({ dir }) => {

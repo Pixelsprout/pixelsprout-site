@@ -1,0 +1,40 @@
+---
+const links = [
+  { href: '/projects/rocco/docs/', label: 'Guide' },
+  { href: '/projects/rocco/api/', label: 'API' },
+];
+---
+<header class="tour-bar">
+  <a class="brand" href="/" aria-label="pixelsprout home">
+    <img src="/pixelsprout.png" alt="" width="22" height="22" />
+  </a>
+  <a class="project" href="/projects/rocco/">rocco</a>
+  <span class="slash" aria-hidden="true">/</span>
+  <a class="title" href="/projects/rocco/tour/">Tour</a>
+  <nav aria-label="rocco">
+    {links.map((link) => <a href={link.href}>{link.label}</a>)}
+  </nav>
+</header>
+
+<style>
+  .tour-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 36px;
+    padding: 0 12px;
+    background: var(--soil-bar);
+    border-bottom: 1px solid var(--edge);
+    font-size: 13px;
+  }
+  a:hover { text-decoration: none; }
+  a:focus-visible { outline-offset: 0; }
+  .brand { display: inline-flex; }
+  .brand img { image-rendering: pixelated; }
+  .project, .title, .slash { font-family: var(--font-pixel); font-size: 18px; line-height: 1; }
+  .project { color: var(--text); }
+  .slash { color: var(--edge); }
+  .title { color: var(--sprout); }
+  .project:hover, .title:hover { color: var(--clay); }
+  nav { display: flex; gap: 16px; margin-left: auto; }
+</style>

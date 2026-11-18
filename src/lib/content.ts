@@ -1,6 +1,7 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import type { GardenEntry } from './dex';
 import { assertPosts, showDrafts, visiblePosts } from './post-meta';
+import { tourOf, type Tour } from './tour';
 
 export type Post = CollectionEntry<'posts'>;
 
@@ -21,6 +22,8 @@ export async function getPosts(): Promise<Post[]> {
 type DocsEntry = CollectionEntry<'docs'>;
 type PageData = Extract<DocsEntry['data'], { kind: 'page' }>;
 type SourceData = Extract<DocsEntry['data'], { kind: 'source' }>;
+type StepData = Extract<DocsEntry['data'], { kind: 'step' }>;
+export type TourStepEntry = DocsEntry & { data: StepData };
 export type DocsPage = DocsEntry & { data: PageData; slug: string; title: string; order: number };
 
 export async function getDocs(): Promise<{ source: SourceData; pages: DocsPage[] }> {
@@ -31,4 +34,13 @@ export async function getDocs(): Promise<{ source: SourceData; pages: DocsPage[]
   const source = entries.find((e) => e.data.kind === 'source')?.data as SourceData | undefined;
   if (!source) throw new Error('The docs collection has no source entry');
   return { source, pages };
+}
+
+export async function getTour(): Promise<Tour> {
+  return tourOf((await getDocs()).source.tour);
+}
+
+export async function getTourSteps(): Promise<TourStepEntry[]> {
+  const entries = await getCollection('docs');
+  return entries.filter((e): e is TourStepEntry => e.data.kind === 'step').sort((a, b) => a.data.order - b.data.order);
 }

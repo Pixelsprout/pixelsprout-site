@@ -1,0 +1,29 @@
+---
+import Tour from '../../../../layouts/Tour.astro';
+import { getTour, getTourSteps } from '../../../../lib/content';
+import { tourUrl } from '../../../../lib/tour-steps';
+
+const tour = await getTour();
+const steps = tour.available ? await getTourSteps() : [];
+---
+<Tour title="Contents" description="The rocco Tour: learn rocco in the browser, one Tutorial chapter at a time.">
+  <main class="contents">
+    <h1>rocco Tour</h1>
+    {!tour.available ? (
+      <p>{tour.message}.</p>
+    ) : steps.length === 0 ? (
+      <p>This release has no Tour steps.</p>
+    ) : (
+      <ol>
+        {steps.map((step) => <li><a class="tap" href={tourUrl(step.data.slug)}>{step.data.title}</a></li>)}
+      </ol>
+    )}
+    <p><a class="tap" href="/projects/rocco/docs/">Read the Guide</a></p>
+  </main>
+</Tour>
+
+<style>
+  .contents { max-width: 700px; margin: 0 auto; padding: 64px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .contents p { margin: 0; }
+  ol { margin: 0; padding-left: 24px; }
+</style>

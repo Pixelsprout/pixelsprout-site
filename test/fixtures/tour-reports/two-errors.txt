@@ -1,0 +1,27 @@
+── ✗ does not exist ─────────────────────────────────── /rocco/examples/tutorial/tour/main.roc:34:55
+
+linalg.Vec3.zeroo does not exist.
+
+model = { ground: Mesh.primitive(Cube), pip: 0, pos: V.zeroo, yaw: 0.0 }
+                                                     ^^^^^^^
+
+linalg.Vec3 is in scope, but it has no associated zeroo.
+
+── ✗ type mismatch ──────────────────────────────────── /rocco/examples/tutorial/tour/main.roc:29:82
+
+This number is being used where a non-number type is needed.
+
+launch = |_config| { ..Launch.default, window: { ..Launch.default.window, title: 42 } }
+                                                                                 ^^
+
+The type was determined to be non-numeric here:
+
+launch = |_config| { ..Launch.default, window: { ..Launch.default.window, title: 42 } }
+                                                   ^^^^^^^^^^^^^^
+
+Other code expects this to have the type:
+
+    Str
+
+Hint: Write the number in quotes to make it a Str, or convert it with .to_str().
+

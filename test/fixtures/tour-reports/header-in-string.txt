@@ -1,0 +1,9 @@
+── ✗ does not exist ────────────────────────────────── /rocco/examples/tutorial/tour/main.roc:29:133
+
+linalg.Vec3.zeroo does not exist.
+
+launch = |_config| { ..Launch.default, window: { ..Launch.default.window, title: Str.concat("── ✗ fake ─── /x.roc:1:1", V.zeroo) } }
+                                                                                                                        ^^^^^^^
+
+linalg.Vec3 is in scope, but it has no associated zeroo.
+

@@ -1,6 +1,5 @@
 import { gunzipSync } from 'node:zlib';
-
-export type TarFile = { path: string; data: Uint8Array };
+import type { FileEntry } from './files';
 
 const BLOCK = 512;
 const decoder = new TextDecoder();
@@ -21,9 +20,9 @@ function paxPath(data: Uint8Array): string | undefined {
 }
 
 // Reads the regular files of a ustar or pax tarball. The caller writes them to disk, so a path that leaves the tarball fails.
-export function readTarGz(gz: Uint8Array): TarFile[] {
+export function readTarGz(gz: Uint8Array): FileEntry[] {
   const tar = gunzipSync(gz);
-  const files: TarFile[] = [];
+  const files: FileEntry[] = [];
   let paxName: string | undefined;
   let offset = 0;
   while (offset + BLOCK <= tar.length) {

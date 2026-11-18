@@ -1,0 +1,26 @@
+name: Deploy smoke
+
+# Vercel posts a deployment status for each deploy. This job checks the Tour
+# artifacts of that deploy. To stop a failed deploy going live, make this check
+# a required Deployment Check in the Vercel project settings.
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  tour-artifacts:
+    if: github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          # The smoke test uses only Node built-ins, so this job installs no pnpm.
+          package-manager-cache: false
+      - run: node scripts/deploy-smoke.mjs "$DEPLOY_URL"
+        env:
+          DEPLOY_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
