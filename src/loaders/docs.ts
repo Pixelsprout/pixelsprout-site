@@ -99,7 +99,8 @@ export function docsLoader(): Loader {
         const rendered = await renderMarkdown(text);
         const data = await parseData({ id, data: { ...rendered.metadata?.frontmatter, kind: 'page', path: file.path } });
         store.set({ id, data, rendered, digest: generateDigest(text) });
-        if (data.kind === 'page') guidePages.push({ path: file.path, text: markdown, title: data.title, order: data.order });
+        const { title, order } = data as unknown as { title: string; order: number };
+        guidePages.push({ path: file.path, text: markdown, title, order });
       }
       // Without Tour artifacts there is nothing to run, so the step pages say that the Tour is not available.
       if (buildInfo) {
