@@ -36,3 +36,14 @@ export function stepEdits(storage: EditStorage | null, step: StepSources): StepE
     answer: () => step.answer,
   };
 }
+
+const autoRunKey = 'rocco-tour:auto-run';
+
+// One choice for the whole Tour, not per step.
+export function autoRunChoice(storage: EditStorage | null) {
+  return {
+    get: () => attempt(() => storage?.getItem(autoRunKey), null) !== 'off',
+    set: (on: boolean) =>
+      attempt(() => (on ? storage?.removeItem(autoRunKey) : storage?.setItem(autoRunKey, 'off')), undefined),
+  };
+}

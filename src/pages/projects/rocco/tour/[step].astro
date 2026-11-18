@@ -68,19 +68,28 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
             <span class="file">main.roc</span>
             <span class="spacer"></span>
             <button type="button" data-action="run" title="Run (Cmd/Ctrl+Enter)">Run</button>
+            <label class="auto-run" title="Run each edit after a pause in typing"><input type="checkbox" data-action="auto-run" checked /> Auto-run</label>
             <button type="button" data-action="reset">Reset</button>
             <button type="button" data-action="answer">Show answer</button>
           </div>
           <div class="editor pane-body" id="tour-editor"></div>
         </section>
 
-        <section class="panel" data-pane="panel" aria-label="Problems and Console">
+        <section class="panel" data-pane="panel" data-tab="problems" aria-label="Problems and Console">
           <div class="edge" data-edge="panel" role="separator" aria-orientation="horizontal" aria-label="Resize the panel" tabindex="0"></div>
           <div class="bar">
             <button type="button" class="pane-toggle" data-toggle="panel" aria-controls="tour-panel" aria-expanded="true" aria-label="Collapse the panel">-</button>
-            <span>Problems <b class="count" id="tour-problem-count"></b></span>
+            <div class="tabs" role="tablist">
+              <button type="button" role="tab" data-tab="problems" aria-controls="tour-problems" aria-selected="true">Problems <b class="count" id="tour-problem-count"></b></button>
+              <button type="button" role="tab" data-tab="console" aria-controls="tour-console" aria-selected="false">Console <b class="count" id="tour-console-count"></b></button>
+            </div>
+            <span class="spacer"></span>
+            <button type="button" data-action="clear">Clear</button>
           </div>
-          <div class="panel-body pane-body" id="tour-panel"></div>
+          <div class="panel-body pane-body" id="tour-panel">
+            <div role="tabpanel" id="tour-problems" aria-label="Problems"></div>
+            <ul role="tabpanel" id="tour-console" class="console" aria-label="Console" hidden></ul>
+          </div>
         </section>
 
         <section class="preview" data-pane="preview" aria-label="Preview">
@@ -90,9 +99,21 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
             <span>Preview</span>
             <span class="spacer"></span>
             <span class="status" id="tour-status" aria-live="polite"></span>
+            <button type="button" data-action="restart" title="Start the game again from init">Restart</button>
             <button type="button" data-action="expand" aria-pressed="false">Expand</button>
           </div>
-          <div class="stage pane-body" id="tour-stage" transition:persist="tour-stage"><p class="note">The game runs here.</p></div>
+          <div class="stage pane-body" id="tour-stage" transition:persist="tour-stage">
+            <p class="note">The game runs here.</p>
+            <div class="card" id="tour-card" role="alert" hidden>
+              <h3></h3>
+              <pre></pre>
+              <div class="actions">
+                <button type="button" data-card-action="restart">Restart</button>
+                <button type="button" data-card-action="dismiss">Show last frame</button>
+                <button type="button" data-card-action="reload">Reload</button>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </div>
@@ -123,12 +144,20 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
       document.querySelector('[data-action="reset"]')!.addEventListener('click', () => editor.reset());
       document.querySelector('[data-action="answer"]')!.addEventListener('click', () => editor.showAnswer());
       const byId = (id: string) => document.getElementById(id)!;
+      const action = <T extends HTMLElement = HTMLElement>(name: string) => document.querySelector<T>(`[data-action="${name}"]`)!;
       mountTourRun(tour.dataset.base!, editor, panes, {
         stage: byId('tour-stage'),
         status: byId('tour-status'),
-        panel: byId('tour-panel'),
+        restart: action<HTMLButtonElement>('restart'),
+        card: byId('tour-card'),
+        panel: document.querySelector<HTMLElement>('section.panel')!,
+        problems: byId('tour-problems'),
         count: byId('tour-problem-count'),
-        run: document.querySelector<HTMLElement>('[data-action="run"]')!,
+        console: byId('tour-console'),
+        consoleCount: byId('tour-console-count'),
+        clear: action('clear'),
+        run: action('run'),
+        autoRun: action<HTMLInputElement>('auto-run'),
       });
     }
   }
@@ -180,8 +209,42 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
     cursor: pointer;
   }
   .pane-toggle { min-width: 28px; }
+  .auto-run { display: flex; gap: 4px; align-items: center; color: var(--text-muted); cursor: pointer; }
+  .auto-run input { margin: 0; accent-color: var(--sprout); }
   .editor { min-height: 0; }
-  .panel-body { overflow: auto; background: var(--soil-deep); font-size: 13px; }
+  .panel-body { display: grid; overflow: hidden; background: var(--soil-deep); font-size: 13px; }
+  .panel-body > [role='tabpanel'] { overflow: auto; min-height: 0; }
+  .panel-body > [hidden] { display: none; }
+  .tabs { display: flex; gap: 2px; }
+  .bar .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-muted); }
+  .bar .tabs button[aria-selected='true'] { color: var(--text); border-bottom-color: var(--sprout); }
+  .panel:not([data-tab='console']) [data-action='clear'] { display: none; }
+  .bar button:disabled { opacity: 0.5; cursor: default; }
+  .console { list-style: none; margin: 0; padding: 4px 0; font-family: var(--font-mono, monospace); font-size: 12px; }
+  .console :global(li) { display: flex; gap: 12px; padding: 1px 12px; }
+  .console :global(.kind) { flex: none; width: 4.5em; color: var(--text-muted); }
+  .console :global(.text) { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .console :global(.repeat) { flex: none; margin-left: auto; color: var(--text-muted); }
+  .console :global(.expect .kind), .console :global(.crash), .console :global(.stopped) { color: var(--clay); }
+  .card {
+    position: absolute;
+    z-index: 3;
+    max-width: min(80%, 560px);
+    padding: 14px 18px;
+    background: var(--soil);
+    border: 2px solid var(--clay);
+    font-size: 13px;
+  }
+  .card[hidden] { display: none; }
+  .card h3 { margin: 0 0 6px; color: var(--clay); font-size: 15px; }
+  .card pre { margin: 0 0 10px; white-space: pre-wrap; font-size: 12px; }
+  .card pre:empty { display: none; }
+  .card .actions { display: flex; gap: 8px; }
+  .card button { font: inherit; background: var(--soil-raised); color: var(--text); border: 1px solid var(--edge); padding: 3px 10px; cursor: pointer; }
+  .card[data-kind='stale'] [data-card-action='restart'], .card[data-kind='stale'] [data-card-action='dismiss'] { display: none; }
+  .card:not([data-kind='stale']) [data-card-action='reload'] { display: none; }
+  .stage[data-ended] :global(iframe) { pointer-events: none; }
+  .stage[data-ended='card'] :global(iframe) { filter: grayscale(1) brightness(0.45); }
   .stage { position: relative; background: #000; display: grid; place-items: center; }
   .note { margin: 0; padding: 16px; max-width: 480px; text-align: center; color: var(--text-muted); }
   .status { color: var(--text-muted); }
