@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          # The smoke test uses only Node built-ins, so this job installs no pnpm.
+          package-manager-cache: false
       - run: node scripts/deploy-smoke.mjs "$DEPLOY_URL"
         env:
           DEPLOY_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
