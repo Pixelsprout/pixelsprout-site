@@ -20,6 +20,8 @@ export type WorkerMessage =
 
 export type PageToPreview = { type: 'tour:image'; image: ArrayBuffer; identity: Identity };
 
+export type NeedIframeReason = 'crashed' | 'stopped' | 'erased-callable' | 'digest' | 'init' | 'loaded' | 'launch';
+
 export type PreviewToPage =
   | { type: 'tour:waiting' }
   | { type: 'rocco:ready' }
@@ -28,7 +30,7 @@ export type PreviewToPage =
   | { type: 'tour:crash'; message: string }
   | { type: 'tour:dbg' | 'tour:expect'; text: string }
   | { type: 'tour:swapped' }
-  | { type: 'tour:need-iframe'; reason: string }
+  | { type: 'tour:need-iframe'; reason: NeedIframeReason }
   | { type: 'tour:bad-image'; reason: 'build'; message: string };
 
 export type CompilePort = { post(message: CompileRequest): void };
@@ -44,7 +46,16 @@ export type PreviewPort = {
 
 export type PreviewState = 'unsupported' | 'starting' | 'running' | 'last-good' | 'crashed' | 'stopped' | 'stale';
 
-export type ConsoleKind = 'dbg' | 'expect' | 'crash' | 'stopped';
+export type ConsoleKind = 'dbg' | 'expect' | 'crash' | 'stopped' | 'restart';
+
+// A crash or a stop already has its card and Console line.
+const RESTARTED: Partial<Record<NeedIframeReason, string>> = {
+  init: 'Restarted: you changed init',
+  loaded: 'Restarted: you changed loaded',
+  launch: 'Restarted: you changed launch',
+  digest: 'Restarted: the Model changed',
+  'erased-callable': 'Restarted: the game stores a function',
+};
 
 // The card over the Preview. stale: the deployed Tour changed under this page, and only a reload helps.
 export type Card = { kind: 'crashed' | 'stopped'; message: string } | { kind: 'stale' };
@@ -86,7 +97,19 @@ export type RunController = {
 };
 
 type Image = { image: ArrayBuffer; identity: Identity };
-type Preview = { port: PreviewPort; waiting: boolean; image: Image | null; sent: boolean; focus: boolean; ended: boolean };
+// image is the one the Preview runs, kept so a new Preview can start from it. A later image is queued until the
+// Preview is ready and no other later image is in flight.
+type Preview = {
+  port: PreviewPort;
+  waiting: boolean;
+  ready: boolean;
+  image: Image | null;
+  sent: boolean;
+  focus: boolean;
+  ended: boolean;
+  inFlight: Image | null;
+  queued: Image | null;
+};
 
 export function runController(host: RunHost): RunController {
   let nextId = 1;
@@ -95,6 +118,8 @@ export function runController(host: RunHost): RunController {
   // The Preview on screen, and the newest Preview. They differ while a new Preview starts.
   let shown: Preview | null = null;
   let latest: Preview | null = null;
+  // The newest compiled image. Restart runs it.
+  let newest: Image | null = null;
   let isStale = false;
   let lastLine: { kind: ConsoleKind; text: string; count: number } | null = null;
   let autoRun = true;
@@ -102,15 +127,27 @@ export function runController(host: RunHost): RunController {
 
   const newPreview = (): Preview | null => {
     if (!host.createPreview) return null;
-    return { port: host.createPreview(), waiting: false, image: null, sent: false, focus: false, ended: false };
+    return { port: host.createPreview(), waiting: false, ready: false, image: null, sent: false, focus: false, ended: false, inFlight: null, queued: null };
   };
 
   // The controller keeps the original, so a later Preview can start from the same image.
+  const post = (preview: Preview, { image, identity }: Image) => {
+    const copy = image.slice(0);
+    preview.port.post({ type: 'tour:image', image: copy, identity }, [copy]);
+  };
+
   const send = (preview: Preview) => {
     if (!preview.waiting || !preview.image || preview.sent) return;
     preview.sent = true;
-    const image = preview.image.image.slice(0);
-    preview.port.post({ type: 'tour:image', image, identity: preview.image.identity }, [image]);
+    post(preview, preview.image);
+  };
+
+  // A hot reload. The Preview replies to each later image with tour:swapped, tour:need-iframe or tour:bad-image.
+  const sendLater = (preview: Preview) => {
+    if (!preview.ready || preview.ended || preview.inFlight || !preview.queued) return;
+    preview.inFlight = preview.queued;
+    preview.queued = null;
+    post(preview, preview.inFlight);
   };
 
   // One compile at a time. A newer edit replaces the one that waits.
@@ -123,10 +160,21 @@ export function runController(host: RunHost): RunController {
     host.compiler.post({ type: 'compile', id: compiling.id, source });
   };
 
-  const launch = (image: Image, focus: boolean) => {
+  const launch = (image: Image, focus: boolean, fresh = false) => {
     if (isStale) return;
-    // A prewarmed Preview with no image yet takes this one. A Preview that has an image starts nothing new.
-    if (!latest || latest.image) {
+    newest = image;
+    if (!fresh && latest?.image && !latest.ended) {
+      latest.focus = focus;
+      if (latest.sent) {
+        latest.queued = image;
+        sendLater(latest);
+      } else {
+        latest.image = image;
+      }
+      return;
+    }
+    // A prewarmed Preview with no image yet takes this one.
+    if (fresh || !latest || latest.image) {
       if (latest && latest !== shown) latest.port.remove();
       latest = newPreview();
     }
@@ -138,12 +186,36 @@ export function runController(host: RunHost): RunController {
   };
 
   const ready = (preview: Preview) => {
+    preview.ready = true;
     if (shown && shown !== preview) shown.port.remove();
     shown = preview;
     preview.port.show();
     if (preview.focus) preview.port.focus();
     host.emit({ type: 'preview', state: 'running' });
     host.emit({ type: 'card', card: null });
+    sendLater(preview);
+  };
+
+  const swapped = (preview: Preview) => {
+    if (!preview.inFlight) return;
+    preview.image = preview.inFlight;
+    preview.inFlight = null;
+    if (preview.focus) preview.port.focus();
+    host.emit({ type: 'preview', state: 'running' });
+    sendLater(preview);
+  };
+
+  // The newest image wins: an image queued behind the refused one is newer. After a crash or a stop the card stays,
+  // and the next edit or Restart starts the newest image.
+  const needIframe = (preview: Preview, reason: NeedIframeReason) => {
+    const image = preview.queued ?? preview.inFlight;
+    preview.queued = preview.inFlight = null;
+    if (preview.ended) return;
+    preview.ended = true;
+    if (!image) return;
+    const line = RESTARTED[reason];
+    if (line) log('restart', line);
+    launch(image, preview.focus, true);
   };
 
   const log = (kind: ConsoleKind, text: string) => {
@@ -176,6 +248,7 @@ export function runController(host: RunHost): RunController {
       }
       if (latest && latest !== shown) latest.port.remove();
       latest = newPreview();
+      newest = null;
       if (!latest) host.emit({ type: 'preview', state: 'unsupported' });
       compile(source, false);
     },
@@ -212,7 +285,7 @@ export function runController(host: RunHost): RunController {
       if (!on) clearTimeout(autoRunTimer);
     },
     restart() {
-      if (latest?.image) launch(latest.image, true);
+      if (newest) launch(newest, true, true);
     },
     stale,
     clearConsole() {
@@ -228,6 +301,10 @@ export function runController(host: RunHost): RunController {
         send(preview);
       } else if (message.type === 'rocco:ready') {
         ready(preview);
+      } else if (message.type === 'tour:swapped') {
+        swapped(preview);
+      } else if (message.type === 'tour:need-iframe') {
+        needIframe(preview, message.reason);
       } else if (message.type === 'tour:dbg' || message.type === 'tour:expect') {
         log(message.type === 'tour:dbg' ? 'dbg' : 'expect', message.text);
       } else if (message.type === 'tour:crash') {
