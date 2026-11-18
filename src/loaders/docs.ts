@@ -7,6 +7,7 @@ import { API_BASE, API_PACKAGES, DOCS_BASE, pageSlug, replaceMarkers, rewriteLin
 import type { DocsSource } from '../lib/docs-source';
 import { readRoccoSources } from '../lib/rocco-sources';
 import { tourSiteFiles } from '../lib/tour';
+import type { TourBuildInfo } from '../lib/tour-source';
 
 export const SOURCE_ID = '#source';
 
@@ -65,9 +66,13 @@ export function docsLoader(): Loader {
       const site = siteFiles(files);
 
       for (const file of tourSiteFiles(tour)) await site.write(file.path, file.data);
-      const buildInfo = tour.kind === 'tour' ? tour.buildInfo : null;
-      if (tour.kind === 'tour') logger.info(`Loaded the Tour artifacts ${tour.buildInfo.buildId} from ${tour.origin}.`);
-      else logger.info(`No Tour: ${tour.reason}. The Tour pages say that the Tour is not available for this release.`);
+      let buildInfo: TourBuildInfo | null = null;
+      if (tour.kind === 'tour') {
+        buildInfo = tour.buildInfo;
+        logger.info(`Loaded the Tour artifacts ${tour.buildInfo.buildId} from ${tour.origin}.`);
+      } else {
+        logger.info(`No Tour: ${tour.reason}. The Tour pages say that the Tour is not available for this release.`);
+      }
 
       const setSource = async (ref: string | null, api: string[]) => {
         const data = { kind: 'source', origin: source.origin, ref, api, tour: buildInfo };
