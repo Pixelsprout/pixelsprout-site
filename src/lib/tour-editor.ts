@@ -5,6 +5,7 @@ import { createHighlighterCore } from 'shiki/core';
 import { createOnigurumaEngine } from 'shiki/engine/oniguruma';
 import roc from '../grammars/roc.tmLanguage.json';
 import { soil } from '../styles/soil-theme.mjs';
+import { TransitionBeforeSwapEvent } from 'astro:transitions/client';
 import { stepEdits, type StepSources } from './tour-edits';
 
 export type TourEditor = { editor: monaco.editor.IStandaloneCodeEditor; source(): string; reset(): void; showAnswer(): void };
@@ -17,10 +18,27 @@ const storage = () => {
   }
 };
 
+// Monaco adds its token colours and menu styles to <head> at run time. A ClientRouter swap removes every head
+// element the next page does not also have, which leaves the editor uncoloured after a step change.
+let keptStyles = 0;
+
+function keepMonacoStyles(event: Event) {
+  if (!(event instanceof TransitionBeforeSwapEvent)) return;
+  const incoming = new Set([...event.newDocument.head.querySelectorAll('style')].map((style) => style.textContent));
+  document.head.querySelectorAll<HTMLStyleElement>('style:not([data-vite-dev-id])').forEach((style) => {
+    if (!style.textContent?.includes('.monaco-') || incoming.has(style.textContent)) return;
+    style.dataset.astroTransitionPersist ??= `monaco-style-${keptStyles++}`;
+    const twin = event.newDocument.createElement('style');
+    twin.dataset.astroTransitionPersist = style.dataset.astroTransitionPersist;
+    event.newDocument.head.append(twin);
+  });
+}
+
 let highlighting: Promise<void> | null = null;
 
 function highlightRoc(): Promise<void> {
   highlighting ??= (async () => {
+    document.addEventListener('astro:before-swap', keepMonacoStyles);
     (self as unknown as { MonacoEnvironment: monaco.Environment }).MonacoEnvironment = { getWorker: () => new EditorWorker() };
     const highlighter = await createHighlighterCore({
       themes: [soil],
