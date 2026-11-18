@@ -18,7 +18,6 @@ const TYPES: Record<string, string> = {
   '.gif': 'image/gif',
   '.webp': 'image/webp',
   '.woff2': 'font/woff2',
-  '.wasm': 'application/wasm',
 };
 
 const exists = (path: string, kind: 'file' | 'folder' = 'file') =>
