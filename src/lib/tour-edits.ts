@@ -12,7 +12,7 @@ export type StepEdits = {
 const editKey = (slug: string) => `rocco-tour:edit:${slug}`;
 
 // localStorage throws in some private windows and when the quota is full. The editor still works; it only forgets.
-function attempt<T>(action: () => T, fallback: T): T {
+export function attempt<T>(action: () => T, fallback: T): T {
   try {
     return action();
   } catch {
