@@ -79,6 +79,32 @@ build info from `getTour()` in `src/lib/content.ts`.
 - With `DOCS_SOURCE` set to a checkout, the build reads `build/tour/` in the checkout and uses the manifest tag for the
   path. If `build/tour/` does not exist, the build still succeeds with no Tour.
 
+### How the Tour artifacts are served
+
+Vercel does not serve pre-compressed files, and it compresses `.wasm` and `.data` badly or not at all. So the build
+compresses them itself.
+
+- The build replaces each `.wasm` and `.data` file with a brotli `.br` file. It deploys no plain copy.
+- The build changes each quoted file name, such as `"index.data"`, to the `.br` name in the scripts of the same folder.
+  If no script in the folder names the file, the build fails.
+- Quality 11 takes about 45 s for the compile worker. The build keeps each result in `node_modules/.astro/tour-brotli/`,
+  so the next build with the same artifacts is fast.
+- `vercel.json` sends `Content-Encoding: br`, the type of the plain file and `Vary: Accept-Encoding` for `.wasm.br` and
+  `.data.br`. Every file under `/projects/rocco/tour/_r/` gets `Cache-Control: public, max-age=31536000, immutable`.
+- The dev server sends the same encoding and type for a `.br` file.
+- The build writes `/projects/rocco/tour/artifacts.json`. It lists each Tour file with the SHA-256 of the bytes that a
+  browser gets after it decodes the body.
+
+To check a deploy, run `node scripts/deploy-smoke.mjs <deploy URL>`. The script reads `artifacts.json` and checks each
+file: HTTP 200, the immutable `Cache-Control`, exactly one `Content-Encoding: br` on each `.br` file, the type and `Vary`,
+no plain copy, and a body that decodes to the listed bytes. If a check fails, the script exits 1. The `deploy-smoke.yml`
+workflow runs it for each successful Vercel deployment. To stop a failed deploy going live, make that check a required
+Deployment Check in the Vercel project. Set `VERCEL_AUTOMATION_BYPASS_SECRET` to reach a protected preview.
+
+To check the load and memory budgets, run `node scripts/tour-bench.mjs <Tour step URL>` against a deploy. It needs Chrome
+with WebGPU (`CHROME` names the binary). It reports the cold and the repeat visit to the first frame at 50 Mbps, a warm
+Run, the compile worker peak and the Chrome peak. It exits 1 only if the compile worker goes over 1 GiB.
+
 ## Environment variables
 
 | Name | Where | Purpose |
