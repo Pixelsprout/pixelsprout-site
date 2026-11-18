@@ -42,7 +42,8 @@ async function readRelease(options: RoccoSourcesOptions): Promise<RoccoSources> 
 }
 
 async function readCheckout(source: string): Promise<RoccoSources> {
-  return { docs: await readDocsCheckout(source), tour: await readTourCheckout(source) };
+  const [docs, tour] = await Promise.all([readDocsCheckout(source), readTourCheckout(source)]);
+  return { docs, tour };
 }
 
 export async function readRoccoSources(options: RoccoSourcesOptions = {}): Promise<RoccoSources> {
