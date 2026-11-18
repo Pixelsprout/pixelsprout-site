@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 import type { Loader } from 'astro/loaders';
 import { docsFilesDir } from '../integrations/docs-files';
 import { API_BASE, API_PACKAGES, DOCS_BASE, pageSlug, replaceMarkers, rewriteLinks } from '../lib/docs';
-import { readDocsSource, type DocsSource } from '../lib/docs-source';
+import { readRoccoSources, type DocsSource } from '../lib/docs-source';
+import { tourSiteFiles } from '../lib/tour';
 
 export const SOURCE_ID = '#source';
 
@@ -16,7 +17,9 @@ const FONTS = [
 
 const STYLESHEET = /^[^/]+\/styles\.css$/;
 
-async function writeFiles(source: Extract<DocsSource, { kind: 'docs' }>, root: URL, files: string) {
+type SiteFiles = { onDisk: (sitePath: string) => string; write: (sitePath: string, data: Uint8Array | string) => Promise<void> };
+
+function siteFiles(files: string): SiteFiles {
   // A file name is not a URL, so it must not go through URL parsing, where %2e%2e means "..".
   const onDisk = (sitePath: string) => {
     const path = join(files, sitePath);
@@ -28,6 +31,10 @@ async function writeFiles(source: Extract<DocsSource, { kind: 'docs' }>, root: U
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, data);
   };
+  return { onDisk, write };
+}
+
+async function writeDocsFiles(source: Extract<DocsSource, { kind: 'docs' }>, root: URL, { onDisk, write }: SiteFiles) {
   const override = await readFile(new URL('src/styles/roc-docs.css', root), 'utf8');
   for (const file of source.api) {
     const data = STYLESHEET.test(file.path) ? `${new TextDecoder().decode(file.data)}\n${override}` : file.data;
@@ -46,7 +53,7 @@ export function docsLoader(): Loader {
   return {
     name: 'rocco-docs',
     load: async ({ store, parseData, renderMarkdown, generateDigest, logger, config }) => {
-      const source = await readDocsSource({
+      const { docs: source, tour } = await readRoccoSources({
         source: process.env.DOCS_SOURCE,
         token: process.env.GITHUB_TOKEN,
         requireToken: Boolean(process.env.VERCEL),
@@ -54,8 +61,15 @@ export function docsLoader(): Loader {
       const files = fileURLToPath(docsFilesDir(config.cacheDir)).replace(/[\\/]$/, '');
       await rm(files, { recursive: true, force: true });
       store.clear();
+      const site = siteFiles(files);
+
+      for (const file of tourSiteFiles(tour)) await site.write(file.path, file.data);
+      const manifest = tour.kind === 'tour' ? tour.manifest : null;
+      if (tour.kind === 'tour') logger.info(`Loaded the Tour artifacts ${tour.manifest.buildId} from ${tour.origin}.`);
+      else logger.info(`No Tour: ${tour.reason}. The Tour pages say that the Tour is not available for this release.`);
+
       const setSource = async (ref: string | null, api: string[]) => {
-        const data = { kind: 'source', origin: source.origin, ref, api };
+        const data = { kind: 'source', origin: source.origin, ref, api, tour: manifest };
         store.set({ id: SOURCE_ID, data: await parseData({ id: SOURCE_ID, data }) });
       };
 
@@ -66,7 +80,7 @@ export function docsLoader(): Loader {
       }
 
       for (const note of source.notes) logger.info(note);
-      await writeFiles(source, config.root, files);
+      await writeDocsFiles(source, config.root, site);
       const pages = source.guide.filter((file) => file.path.endsWith('.md'));
       if (pages.length === 0) logger.warn(`${source.origin} has no guide pages`);
       for (const file of pages) {

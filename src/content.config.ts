@@ -35,12 +35,18 @@ const garden = defineCollection({
   }),
 });
 
-// The loader adds one source entry, with the id SOURCE_ID, beside the pages.
+// The loader adds one source entry, with the id SOURCE_ID, beside the pages. Its tour is the Tour manifest, or null.
 const docs = defineCollection({
   loader: docsLoader(),
   schema: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('page'), path: z.string(), title: z.string(), summary: z.string(), order: z.number() }),
-    z.object({ kind: z.literal('source'), origin: z.string(), ref: z.string().nullable(), api: z.array(z.string()) }),
+    z.object({
+      kind: z.literal('source'),
+      origin: z.string(),
+      ref: z.string().nullable(),
+      api: z.array(z.string()),
+      tour: z.object({ buildId: z.string(), tag: z.string(), rocNightly: z.string() }).nullable(),
+    }),
   ]),
 });
 

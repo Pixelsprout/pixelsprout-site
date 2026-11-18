@@ -1,6 +1,7 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import type { GardenEntry } from './dex';
 import { assertPosts, showDrafts, visiblePosts } from './post-meta';
+import { tourOf, type Tour } from './tour';
 
 export type Post = CollectionEntry<'posts'>;
 
@@ -31,4 +32,8 @@ export async function getDocs(): Promise<{ source: SourceData; pages: DocsPage[]
   const source = entries.find((e) => e.data.kind === 'source')?.data as SourceData | undefined;
   if (!source) throw new Error('The docs collection has no source entry');
   return { source, pages };
+}
+
+export async function getTour(): Promise<Tour> {
+  return tourOf((await getDocs()).source.tour);
 }

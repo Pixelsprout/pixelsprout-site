@@ -3,7 +3,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
 
-// The docs loader writes the roc docs HTML, the guide images and the fonts here, each at its path on the site.
+// The docs loader writes the roc docs HTML, the guide images, the fonts and the Tour artifacts here, each at its path on the site.
 export const docsFilesDir = (cacheDir: URL) => new URL('rocco-docs/', cacheDir);
 
 const TYPES: Record<string, string> = {
@@ -18,6 +18,7 @@ const TYPES: Record<string, string> = {
   '.gif': 'image/gif',
   '.webp': 'image/webp',
   '.woff2': 'font/woff2',
+  '.wasm': 'application/wasm',
 };
 
 const exists = (path: string, kind: 'file' | 'folder' = 'file') =>

@@ -83,6 +83,11 @@ check(read('projects/rocco/api/platform/styles.css').includes("font-family: 'IBM
 check(read('projects/rocco/api/platform/index.html') === readFileSync('test/fixtures/rocco/build/docs/platform/index.html', 'utf8'), 'the API HTML changed on the way');
 check(read('projects/rocco/index.html').includes('href="/projects/rocco/docs/"'), 'the rocco page does not link to the docs');
 check(read('projects/rocco/index.html').includes('href="/projects/rocco/api/"'), 'the rocco page does not link to the API');
+check(
+  read('projects/rocco/tour/_r/v0.2.0-dev/preview/index.html') === readFileSync('test/fixtures/rocco/build/tour/preview/index.html', 'utf8'),
+  'the Tour artifacts are not at the tag path',
+);
+check(existsSync('dist/projects/rocco/tour/_r/v0.2.0-dev/manifest.json'), 'the Tour artifacts lack manifest.json');
 
 build({ POSTS_DIR: 'test/fixtures/empty-posts', DOCS_SOURCE: 'test/fixtures/empty-docs' });
 
@@ -91,5 +96,6 @@ check(read('devlog/index.html').includes('nothing published yet'), '/devlog/ lac
 check(read('rss.xml').includes('<channel>'), 'rss.xml is not a feed');
 check(read('projects/rocco/docs/index.html').includes('No release has docs yet.'), '/projects/rocco/docs/ lacks the empty state');
 check(read('projects/rocco/api/index.html').includes('No release has docs yet.'), '/projects/rocco/api/ lacks the empty state');
+check(!existsSync('dist/projects/rocco/tour'), 'a build with no Tour artifacts has a Tour folder');
 
 console.log('smoke: ok');
