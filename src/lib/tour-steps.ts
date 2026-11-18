@@ -73,6 +73,21 @@ const chapterSource = (slug: string) => `examples/tutorial/${slug}/main.roc`;
 
 export const tourUrl = (slug: string) => `${TOUR_BASE}${slug}/`;
 
+// The same pattern as release.LOCAL_PATH in rocco-engine scripts/release.py.
+const LOCAL_PATH = /"(?:\.\.\/)+(platform|packages\/([A-Za-z0-9_-]+))\/main\.roc"/g;
+
+// Without urls.json the sources keep their repo paths, which the worker resolves from the checkout.
+function pointHeader(source: string, markers: Markers | null, path: string): string {
+  if (!markers) return source;
+  return source.replace(LOCAL_PATH, (_, folder: string, name: string | undefined) => {
+    const key = `${name ?? 'platform'}_url`;
+    if (!Object.hasOwn(markers, key)) {
+      throw new DocsError(`${path} names ${folder} in its header, but urls.json has no ${key}. urls.json gives ${Object.keys(markers).join(', ')}.`);
+    }
+    return `"${markers[key]}"`;
+  });
+}
+
 const stepUrl = (slug: string) => (slug.startsWith('tutorial/') ? tourUrl(slug.slice('tutorial/'.length)) : docsUrl(slug));
 
 // One step per Tutorial page. A step starts from the app of the chapter before it; step 1 starts from the stub.
@@ -86,7 +101,7 @@ export function tourSteps({ pages, sources, ref, markers }: TourStepsInput): Tou
     const sourceOf = (path: string) => {
       const found = text.get(path);
       if (found === undefined) throw new DocsError(`The Tour step ${slug} needs ${path}, which the docs source does not have`);
-      return found;
+      return pointHeader(found, markers, path);
     };
     const lesson = applyTourMarkers(replaceMarkers(page.text, markers, page.path), page.path);
     return {

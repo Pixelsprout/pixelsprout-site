@@ -1,4 +1,4 @@
-app [init, launch, loaded, step, view] { pf: platform "../../../platform/main.roc", roc: "nightly-2026-11-04-2622062" }
+app [init, launch, loaded, step, view] { cam: "../../../packages/camera/main.roc", mesh: "../../../packages/mesh/main.roc", pf: platform "../../../platform/main.roc", roc: "nightly-2026-11-04-2622062" }
 
 import pf.Vocabulary exposing [Command, Manifest]
 import pf.Launch

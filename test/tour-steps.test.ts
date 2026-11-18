@@ -117,6 +117,31 @@ describe('tourSteps', () => {
     expect(character.text).not.toContain('{{');
   });
 
+  const RELEASE = {
+    camera_url: 'https://x/camera.tar.zst',
+    linalg_url: 'https://x/linalg.tar.zst',
+    mesh_url: 'https://x/mesh.tar.zst',
+    platform_url: 'https://x/platform.tar.zst',
+    ui_url: 'https://x/ui.tar.zst',
+    roc_nightly: 'nightly-1',
+  };
+  const RELEASE_HEADER =
+    'app [init, launch, loaded, step, view] { cam: "https://x/camera.tar.zst", mesh: "https://x/mesh.tar.zst", pf: platform "https://x/platform.tar.zst", roc: "nightly-2026-11-04-2622062" }\n';
+
+  it('points the app header of each source at the release package URLs', () => {
+    const [window, character] = build(RELEASE);
+    for (const source of [window.start, window.answer, character.start, character.answer]) {
+      expect(source.startsWith(RELEASE_HEADER)).toBe(true);
+    }
+    expect(window.answer.slice(RELEASE_HEADER.length)).toBe(read('examples/tutorial/01-window/main.roc').split('\n').slice(1).join('\n'));
+  });
+
+  it('fails when urls.json has no URL for a package in a header, and names the package and file', () => {
+    const { camera_url: _, ...noCamera } = RELEASE;
+    const plain = { ...page('01-window', 'One', 1), text: '# One' };
+    expect(() => tourSteps({ pages: [plain], sources: sources(), ref: 'main', markers: noCamera })).toThrow(/examples\/tutorial\/00-start\/main\.roc .*packages\/camera.* camera_url/);
+  });
+
   it('fails when a chapter app is missing, and names the file', () => {
     expect(() => tourSteps({ pages: pages(), sources: [source('00-start'), source('01-window')], ref: 'main', markers: null })).toThrow(
       /The Tour step 02-character needs examples\/tutorial\/02-character\/main\.roc/,
