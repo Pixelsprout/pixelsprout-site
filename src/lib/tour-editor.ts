@@ -18,15 +18,21 @@ const storage = () => {
   }
 };
 
-// Monaco adds its token colours and menu styles to <head> at run time. A ClientRouter swap removes every head
-// element the next page does not also have, which leaves the editor uncoloured after a step change.
+// Monaco adds its token colours and menu styles to <head> at run time, and in dev Vite adds Monaco's CSS there
+// too. A ClientRouter swap removes every head element the next page does not also have, which leaves the editor
+// uncoloured and without its layout after a step change.
 let keptStyles = 0;
+
+const isMonacoStyle = (style: HTMLStyleElement) =>
+  style.dataset.viteDevId ? style.dataset.viteDevId.includes('/monaco-editor/') : !!style.textContent?.includes('.monaco-');
 
 function keepMonacoStyles(event: Event) {
   if (!(event instanceof TransitionBeforeSwapEvent)) return;
-  const incoming = new Set([...event.newDocument.head.querySelectorAll('style')].map((style) => style.textContent));
-  document.head.querySelectorAll<HTMLStyleElement>('style:not([data-vite-dev-id])').forEach((style) => {
-    if (!style.textContent?.includes('.monaco-') || incoming.has(style.textContent)) return;
+  const incoming = new Set(
+    [...event.newDocument.head.querySelectorAll<HTMLStyleElement>('style')].map((style) => style.dataset.viteDevId ?? style.textContent),
+  );
+  document.head.querySelectorAll<HTMLStyleElement>('style').forEach((style) => {
+    if (!isMonacoStyle(style) || incoming.has(style.dataset.viteDevId ?? style.textContent)) return;
     style.dataset.astroTransitionPersist ??= `monaco-style-${keptStyles++}`;
     const twin = event.newDocument.createElement('style');
     twin.dataset.astroTransitionPersist = style.dataset.astroTransitionPersist;
