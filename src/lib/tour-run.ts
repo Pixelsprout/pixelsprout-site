@@ -125,6 +125,7 @@ export function runController(host: RunHost): RunController {
 
   return {
     start(source) {
+      if (latest && latest !== shown) latest.port.remove();
       latest = newPreview();
       if (!latest) host.emit({ type: 'preview', state: 'unsupported' });
       compile(source, false);

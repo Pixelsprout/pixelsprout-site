@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { recyclingCompiler, RECYCLE_BYTES, type WorkerReply, type WorkerRequest } from '../src/lib/tour-recycle';
 import { runController, type CompileRequest, type Identity, type PreviewPort, type RunEvent, type WorkerMessage } from '../src/lib/tour-run';
 
 const identity: Identity = {
@@ -209,5 +210,93 @@ describe('runController', () => {
     expect(t.events.filter((e) => e.type === 'problems').at(-1)).toMatchObject({ problems: [{ line: 34 }, { line: 29 }] });
     expect(t.events.filter((e) => e.type === 'preview')).toEqual([{ type: 'preview', state: 'unsupported' }]);
   });
-});
 
+  it('starts the next step on the same compile worker and keeps the old game until the new first frame', () => {
+    const t = setup();
+    t.controller.start('app [one]');
+    const [first] = t.previews;
+    t.from(first, { type: 'tour:waiting' });
+    t.compiled([1]);
+    t.from(first, { type: 'rocco:ready' });
+
+    t.controller.start('app [two]');
+    expect(t.requests.map((r) => r.source)).toEqual(['app [one]', 'app [two]']);
+    const second = t.previews[1];
+    t.from(second, { type: 'tour:waiting' });
+    t.compiled([2]);
+    expect(first.removed).toBe(false);
+    t.from(second, { type: 'rocco:ready' });
+    expect(first.removed).toBe(true);
+    expect(second.shown).toBe(true);
+    expect(second.focused).toBe(false);
+  });
+
+  it('drops the Preview and the compile of a step the reader left before its first frame', () => {
+    const t = setup();
+    t.controller.start('app [one]');
+    const [first] = t.previews;
+    t.controller.start('app [two]');
+    expect(first.removed).toBe(true);
+    t.compiled([1], t.requests[0].id);
+    expect(t.requests.map((r) => r.source)).toEqual(['app [one]', 'app [two]']);
+    t.compiled([2]);
+    const second = t.previews[1];
+    t.from(second, { type: 'tour:waiting' });
+    expect(t.imagesSent(second).map(bytesOf)).toEqual([[2]]);
+    expect(t.previews).toHaveLength(2);
+  });
+
+  it('recycles a compile worker over 640 MiB after a Run while the reader keeps running games', () => {
+    type FakeWorker = { requests: WorkerRequest[]; terminated: boolean; reply(message: WorkerReply): void };
+    const workers: FakeWorker[] = [];
+    const previews: FakePreview[] = [];
+    let controller: ReturnType<typeof runController> | null = null;
+    const compiler = recyclingCompiler({
+      spawn(listen) {
+        const worker: FakeWorker = { requests: [], terminated: false, reply: listen };
+        workers.push(worker);
+        return { post: (message) => void worker.requests.push(message), terminate: () => void (worker.terminated = true) };
+      },
+      deliver: (message) => controller!.fromWorker(message),
+    });
+    controller = runController({
+      compiler,
+      createPreview: () => {
+        const preview = fakePreview();
+        previews.push(preview);
+        return preview;
+      },
+      emit: () => {},
+    });
+    const lastCompile = (worker: FakeWorker) => worker.requests.filter((r) => r.type === 'compile').at(-1) as { id: number; source: string };
+    const compiled = (worker: FakeWorker, byte: number, memory: number) =>
+      worker.reply({ type: 'compiled', id: lastCompile(worker).id, image: new Uint8Array([byte]).buffer, identity, reports: '', stats: {}, memory });
+    const play = (preview: FakePreview) => {
+      controller!.fromWindow(preview.source, { type: 'tour:waiting' });
+      controller!.fromWindow(preview.source, { type: 'rocco:ready' });
+    };
+
+    controller.start('app [stub]');
+    const [old] = workers;
+    compiled(old, 1, RECYCLE_BYTES + 1);
+    play(previews[0]);
+    expect(workers).toHaveLength(2);
+    const fresh = workers[1];
+
+    controller.run('app [edit while the new worker starts]', { focus: true });
+    expect(lastCompile(old).source).toBe('app [edit while the new worker starts]');
+    compiled(old, 2, 700 * 1024 * 1024);
+    play(previews[1]);
+    expect(previews[1].shown).toBe(true);
+
+    fresh.reply({ type: 'ready' });
+    old.reply({ type: 'cache', entries: [{ path: '/cache/a', bytes: new ArrayBuffer(4) }] });
+    expect(old.terminated).toBe(true);
+
+    controller.run('app [edit on the new worker]', { focus: true });
+    expect(lastCompile(fresh).source).toBe('app [edit on the new worker]');
+    compiled(fresh, 3, 64 * 1024 * 1024);
+    controller.fromWindow(previews[2].source, { type: 'tour:waiting' });
+    expect(previews[2].posts.map(bytesOf)).toEqual([[3]]);
+  });
+});
