@@ -92,7 +92,7 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
             <span class="status" id="tour-status" aria-live="polite"></span>
             <button type="button" data-action="expand" aria-pressed="false">Expand</button>
           </div>
-          <div class="stage pane-body" id="tour-stage"><p class="note">The game runs here.</p></div>
+          <div class="stage pane-body" id="tour-stage" transition:persist="tour-stage"><p class="note">The game runs here.</p></div>
         </section>
       </div>
     </div>
@@ -101,29 +101,45 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
 )}
 
 <script>
-  import { mountTourEditor } from '../../../../lib/tour-editor';
+  import { mountTourEditor, type TourEditor } from '../../../../lib/tour-editor';
   import { mountTourPanes } from '../../../../lib/tour-pane-ui';
 
-  import { mountTourRun } from '../../../../lib/tour-run-ui';
+  import { leaveTourRun, mountTourRun } from '../../../../lib/tour-run-ui';
 
-  const tour = document.querySelector<HTMLElement>('.tour');
-  const panes = tour && mountTourPanes(tour);
+  // ClientRouter runs this module once per visit. Each Tour step mounts on astro:page-load and unmounts before the swap.
+  let mounted: TourEditor | null = null;
 
-  const data = document.getElementById('tour-step');
-  const host = document.getElementById('tour-editor');
-  if (tour && panes && data && host) {
-    const editor = await mountTourEditor(host, JSON.parse(data.textContent!));
-    document.querySelector('[data-action="reset"]')!.addEventListener('click', () => editor.reset());
-    document.querySelector('[data-action="answer"]')!.addEventListener('click', () => editor.showAnswer());
-    const byId = (id: string) => document.getElementById(id)!;
-    mountTourRun(tour.dataset.base!, editor, panes, {
-      stage: byId('tour-stage'),
-      status: byId('tour-status'),
-      panel: byId('tour-panel'),
-      count: byId('tour-problem-count'),
-      run: document.querySelector<HTMLElement>('[data-action="run"]')!,
-    });
+  async function mountStep() {
+    const tour = document.querySelector<HTMLElement>('.tour');
+    const panes = tour && mountTourPanes(tour);
+
+    const data = document.getElementById('tour-step');
+    const host = document.getElementById('tour-editor');
+    if (tour && panes && data && host) {
+      const editor = await mountTourEditor(host, JSON.parse(data.textContent!));
+      // The reader left while Monaco loaded.
+      if (!host.isConnected) return editor.editor.dispose();
+      mounted = editor;
+      document.querySelector('[data-action="reset"]')!.addEventListener('click', () => editor.reset());
+      document.querySelector('[data-action="answer"]')!.addEventListener('click', () => editor.showAnswer());
+      const byId = (id: string) => document.getElementById(id)!;
+      mountTourRun(tour.dataset.base!, editor, panes, {
+        stage: byId('tour-stage'),
+        status: byId('tour-status'),
+        panel: byId('tour-panel'),
+        count: byId('tour-problem-count'),
+        run: document.querySelector<HTMLElement>('[data-action="run"]')!,
+      });
+    }
   }
+
+  document.addEventListener('astro:page-load', mountStep);
+  document.addEventListener('astro:before-swap', () => {
+    leaveTourRun();
+    mounted?.editor.getModel()?.dispose();
+    mounted?.editor.dispose();
+    mounted = null;
+  });
 </script>
 
 <style is:global>
