@@ -16,9 +16,21 @@ import { readTarGz } from './tar';
 
 export type DocsSource =
   | { kind: 'none'; origin: string; reason: string }
-  | { kind: 'docs'; origin: string; ref: string; guide: FileEntry[]; api: FileEntry[]; markers: Markers | null; notes: string[] };
+  | {
+      kind: 'docs';
+      origin: string;
+      ref: string;
+      guide: FileEntry[];
+      api: FileEntry[];
+      sources: FileEntry[];
+      markers: Markers | null;
+      notes: string[];
+    };
 
 export const DOCS_ASSET = 'docs.tar.gz';
+
+// The Tour starts each step from a chapter app of the Tutorial.
+const CHAPTER_APP = /^examples\/tutorial\/[^/]+\/main\.roc$/;
 
 export async function readDocsCheckout(source: string): Promise<DocsSource> {
   const root = expandHome(source);
@@ -29,9 +41,11 @@ export async function readDocsCheckout(source: string): Promise<DocsSource> {
     throw new SourceError(`Cannot read DOCS_SOURCE ${join(source, 'guide')}: ${errorMessage(error)}`);
   }
   const api = await readFolder(join(root, 'build/docs'), '').catch(() => []);
+  const examples = await readFolder(join(root, 'examples/tutorial'), 'examples/tutorial').catch(() => []);
+  const sources = examples.filter((file) => CHAPTER_APP.test(file.path));
   const notes = [`${source} is a checkout, not a release, so the markers stay unchanged`];
   if (api.length === 0) notes.push(`${join(source, 'build/docs')} has no API HTML. Run roc scripts/build.roc docs in the checkout.`);
-  return { kind: 'docs', origin: source, ref: 'main', guide, api, markers: null, notes };
+  return { kind: 'docs', origin: source, ref: 'main', guide, api, sources, markers: null, notes };
 }
 
 function parseMarkers(data: Uint8Array, tag: string): Markers {
@@ -52,11 +66,14 @@ export async function readReleaseDocs(request: Request, get: ApiGet, tag: string
   if (!tree.res.ok) throw apiError(tree.url, tree.res.status);
   const { truncated, tree: entries = [] } = (await tree.res.json()) as Tree;
   if (truncated) throw new SourceError(`GET ${tree.url}: the tree of ${tag} is truncated`);
-  const paths = entries.filter((e) => e.type === 'blob' && e.path.startsWith('guide/')).map((e) => e.path);
+  const blobs = entries.filter((e) => e.type === 'blob').map((e) => e.path);
+  const fetchAll = (paths: string[]) =>
+    Promise.all(paths.map(async (path) => ({ path, data: await fetchBytes(request, rawUrl(encodeURIComponent(tag), encodeURI(path))) })));
 
-  const [tarball, guide] = await Promise.all([
+  const [tarball, guide, sources] = await Promise.all([
     fetchBytes(request, download),
-    Promise.all(paths.map(async (path) => ({ path, data: await fetchBytes(request, rawUrl(encodeURIComponent(tag), encodeURI(path))) }))),
+    fetchAll(blobs.filter((path) => path.startsWith('guide/'))),
+    fetchAll(blobs.filter((path) => CHAPTER_APP.test(path))),
   ]);
   const files = readTarGz(tarball);
   const urls = files.find((file) => file.path === 'urls.json');
@@ -67,6 +84,7 @@ export async function readReleaseDocs(request: Request, get: ApiGet, tag: string
     ref: tag,
     guide: guide.sort(byPath),
     api: files.filter((file) => file !== urls).sort(byPath),
+    sources: sources.sort(byPath),
     markers: parseMarkers(urls.data, tag),
     notes: [],
   };

@@ -54,11 +54,16 @@ const release = () => ({
         { path: 'guide', type: 'tree' },
         { path: 'guide/install.md', type: 'blob' },
         { path: 'guide/images/cube.png', type: 'blob' },
+        { path: 'examples/tutorial/01-cube/main.roc', type: 'blob' },
+        { path: 'examples/tutorial/01-cube/assets/meshes/pip.glb', type: 'blob' },
+        { path: 'examples/tutorial/source/make_meshes.py', type: 'blob' },
+        { path: 'examples/pong/main.roc', type: 'blob' },
       ],
     },
   },
   [`${RAW}/guide/install.md`]: { status: 200, body: '# Install' },
   [`${RAW}/guide/images/cube.png`]: { status: 200, body: new Uint8Array([137, 80, 78, 71]) },
+  [`${RAW}/examples/tutorial/01-cube/main.roc`]: { status: 200, body: 'app [init] {}' },
   [DOWNLOAD]: { status: 200, body: new Uint8Array(TARBALL) },
 });
 
@@ -84,6 +89,13 @@ describe('the docs from the latest release', () => {
     expect(api).toContain('ui/AVeryLongModuleNameThatPushesThePathOverTheOneHundredCharacterLimitOfTheUstarNameFieldByFar/index.html');
     expect(api).not.toContain('urls.json');
     expect(text(source.api.find((f) => f.path === 'platform/styles.css')!.data)).toBe(':root { --body-bg-color: #ffffff; }\n');
+  });
+
+  it('reads the chapter apps of the Tutorial at the tag, and no other example file', async () => {
+    const { fetch } = fakeFetch(release());
+    const { docs: source } = await readRoccoSources({ fetch });
+    if (source.kind !== 'docs') throw new Error(`expected docs, got ${source.reason}`);
+    expect(source.sources.map((f) => [f.path, text(f.data)])).toEqual([['examples/tutorial/01-cube/main.roc', 'app [init] {}']]);
   });
 
   it('sends GITHUB_TOKEN to the API calls only', async () => {
@@ -155,6 +167,7 @@ describe('the docs from DOCS_SOURCE', () => {
       'guide/tutorial/01-cube.md',
     ]);
     expect(source.api.map((f) => f.path)).toEqual(['platform/index.html', 'platform/styles.css']);
+    expect(source.sources.map((f) => f.path)).toEqual(['examples/tutorial/00-start/main.roc', 'examples/tutorial/01-cube/main.roc']);
     expect(source.notes).toEqual([`${CHECKOUT} is a checkout, not a release, so the markers stay unchanged`]);
   });
 
@@ -165,6 +178,7 @@ describe('the docs from DOCS_SOURCE', () => {
     const { docs: source } = await readRoccoSources({ source: dir });
     if (source.kind !== 'docs') throw new Error(`expected docs, got ${source.reason}`);
     expect(source.api).toEqual([]);
+    expect(source.sources).toEqual([]);
     expect(source.notes).toContain(`${dir}/build/docs has no API HTML. Run roc scripts/build.roc docs in the checkout.`);
   });
 
