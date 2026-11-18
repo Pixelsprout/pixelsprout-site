@@ -201,6 +201,9 @@ const sources =
   .lesson :global(h1) { font-size: 40px; }
   .nav { display: flex; align-items: center; gap: 16px; padding: 0 16px; font-size: 14px; background: var(--soil-bar); }
   .nav .next { margin-left: auto; text-align: right; }
+  /* An auto column grows to Monaco's own inline width and never shrinks back, so the editor and its toolbar
+     run off the window when the window narrows or the lesson widens. */
+  .work, .editor-pane, .panel, .preview { grid-template-columns: minmax(0, 1fr); }
   .work { display: grid; gap: 1px; background: var(--edge); grid-template-rows: var(--work-rows); align-content: start; }
   .editor-pane, .panel, .preview { position: relative; display: grid; grid-template-rows: auto 1fr; }
   .toolbar, .bar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: var(--soil-bar); font-size: 13px; }
