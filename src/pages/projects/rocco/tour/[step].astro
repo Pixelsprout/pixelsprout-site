@@ -3,6 +3,7 @@ import { render } from 'astro:content';
 import Tour from '../../../../layouts/Tour.astro';
 import { getDocs, getTour, getTourSteps, type TourStepEntry } from '../../../../lib/content';
 import { TOUR_BASE } from '../../../../lib/tour';
+import { DEFAULT_LAYOUT, template } from '../../../../lib/tour-panes';
 import { tourUrl } from '../../../../lib/tour-steps';
 
 type Link = { slug: string; title: string };
@@ -34,6 +35,8 @@ const props = Astro.props;
 const step = props.kind === 'step' ? props.step : null;
 const { Content } = step ? await render(step) : { Content: null };
 // Escapes "<" so a source with </script> cannot end the data block.
+const grid = template(DEFAULT_LAYOUT);
+const gridStyle = `--tour-columns: ${grid.columns}; --work-rows: ${grid.rows}`;
 const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.start, answer: step.data.answer }).replace(/</g, '\\u003c');
 ---
 {props.kind === 'unavailable' ? (
@@ -46,29 +49,50 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
   </Tour>
 ) : (
   <Tour title={props.step.data.title} description={`A step of the rocco Tour: ${props.step.data.title}`}>
-    <div class="tour">
-      <article class="lesson prose">{Content && <Content />}</article>
+    <div class="tour" style={gridStyle}>
+      <div class="side" data-pane="lesson">
+        <article class="lesson prose pane-body" id="tour-lesson">{Content && <Content />}</article>
+        <nav class="nav" aria-label="Tour steps">
+          <button type="button" class="pane-toggle" data-toggle="lesson" aria-controls="tour-lesson" aria-expanded="true" aria-label="Collapse the lesson">-</button>
+          {props.previous && <a class="tap" rel="prev" href={tourUrl(props.previous.slug)}>&lt; {props.previous.title}</a>}
+          <a class="tap contents" href={TOUR_BASE}>Contents</a>
+          {props.next && <a class="tap next" rel="next" href={tourUrl(props.next.slug)}>{props.next.title} &gt;</a>}
+        </nav>
+        <div class="edge" data-edge="lesson" role="separator" aria-orientation="vertical" aria-label="Resize the lesson" tabindex="0"></div>
+      </div>
 
-      <nav class="nav" aria-label="Tour steps">
-        {props.previous && <a class="tap" rel="prev" href={tourUrl(props.previous.slug)}>&lt; {props.previous.title}</a>}
-        <a class="tap contents" href={TOUR_BASE}>Contents</a>
-        {props.next && <a class="tap next" rel="next" href={tourUrl(props.next.slug)}>{props.next.title} &gt;</a>}
-      </nav>
+      <div class="work">
+        <section class="editor-pane" data-pane="editor" aria-label="Editor">
+          <div class="toolbar">
+            <button type="button" class="pane-toggle" data-toggle="editor" aria-controls="tour-editor" aria-expanded="true" aria-label="Collapse the editor">-</button>
+            <span class="file">main.roc</span>
+            <span class="spacer"></span>
+            <button type="button" data-action="reset">Reset</button>
+            <button type="button" data-action="answer">Show answer</button>
+          </div>
+          <div class="editor pane-body" id="tour-editor"></div>
+        </section>
 
-      <section class="editor-pane" aria-label="Editor">
-        <div class="toolbar">
-          <span class="file">main.roc</span>
-          <span class="spacer"></span>
-          <button type="button" data-action="reset">Reset</button>
-          <button type="button" data-action="answer">Show answer</button>
-        </div>
-        <div class="editor"></div>
-      </section>
+        <section class="panel" data-pane="panel" aria-label="Problems and Console">
+          <div class="edge" data-edge="panel" role="separator" aria-orientation="horizontal" aria-label="Resize the panel" tabindex="0"></div>
+          <div class="bar">
+            <button type="button" class="pane-toggle" data-toggle="panel" aria-controls="tour-panel" aria-expanded="true" aria-label="Collapse the panel">-</button>
+            <span>Problems</span>
+          </div>
+          <div class="panel-body pane-body" id="tour-panel"></div>
+        </section>
 
-      <section class="preview" aria-label="Preview">
-        <div class="preview-bar"><span>Preview</span></div>
-        <div class="stage"><p class="note">The game runs here.</p></div>
-      </section>
+        <section class="preview" data-pane="preview" aria-label="Preview">
+          <div class="edge" data-edge="preview" role="separator" aria-orientation="horizontal" aria-label="Resize the Preview" tabindex="0"></div>
+          <div class="bar">
+            <button type="button" class="pane-toggle" data-toggle="preview" aria-controls="tour-stage" aria-expanded="true" aria-label="Collapse the Preview">-</button>
+            <span>Preview</span>
+            <span class="spacer"></span>
+            <button type="button" data-action="expand" aria-pressed="false">Expand</button>
+          </div>
+          <div class="stage pane-body" id="tour-stage"><p class="note">The game runs here.</p></div>
+        </section>
+      </div>
     </div>
     <script type="application/json" id="tour-step" set:html={sources} />
   </Tour>
@@ -76,9 +100,13 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
 
 <script>
   import { mountTourEditor } from '../../../../lib/tour-editor';
+  import { mountTourPanes } from '../../../../lib/tour-pane-ui';
+
+  const tour = document.querySelector<HTMLElement>('.tour');
+  if (tour) mountTourPanes(tour);
 
   const data = document.getElementById('tour-step');
-  const host = document.querySelector<HTMLElement>('.tour .editor');
+  const host = document.getElementById('tour-editor');
   if (data && host) {
     const editor = await mountTourEditor(host, JSON.parse(data.textContent!));
     document.querySelector('[data-action="reset"]')!.addEventListener('click', () => editor.reset());
@@ -99,19 +127,22 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
     display: grid;
     gap: 1px;
     background: var(--edge);
-    grid-template-columns: minmax(360px, 2fr) 3fr;
-    grid-template-rows: 1fr auto auto;
-    grid-template-areas: 'lesson editor' 'lesson preview' 'nav preview';
+    grid-template-columns: var(--tour-columns);
   }
-  .tour > * { background: var(--soil); min-width: 0; min-height: 0; }
-  .lesson { grid-area: lesson; overflow: auto; padding: 24px 32px; font-size: 15px; }
+  .tour > *, .work > * { background: var(--soil); min-width: 0; min-height: 0; }
+  .tour[data-dragging] { user-select: none; }
+  .tour[data-dragging] :global(iframe) { pointer-events: none; }
+  .side { position: relative; display: grid; grid-template-rows: 1fr auto; }
+  .lesson { overflow: auto; padding: 24px 32px; font-size: 15px; }
   .lesson :global(h1) { font-size: 40px; }
-  .nav { grid-area: nav; display: flex; align-items: center; gap: 16px; padding: 0 16px; font-size: 14px; background: var(--soil-bar); }
+  .nav { display: flex; align-items: center; gap: 16px; padding: 0 16px; font-size: 14px; background: var(--soil-bar); }
   .nav .next { margin-left: auto; text-align: right; }
-  .editor-pane { grid-area: editor; display: grid; grid-template-rows: auto 1fr; }
-  .toolbar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: var(--soil-bar); font-size: 13px; }
-  .toolbar .spacer { flex: 1; }
-  .toolbar button {
+  .work { display: grid; gap: 1px; background: var(--edge); grid-template-rows: var(--work-rows); align-content: start; }
+  .editor-pane, .panel, .preview { position: relative; display: grid; grid-template-rows: auto 1fr; }
+  .toolbar, .bar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: var(--soil-bar); font-size: 13px; }
+  .bar { padding: 4px 10px; }
+  .spacer { flex: 1; }
+  .toolbar button, .bar button, .nav button {
     font: inherit;
     font-size: 13px;
     background: var(--soil-raised);
@@ -120,22 +151,39 @@ const sources = step && JSON.stringify({ slug: step.data.slug, start: step.data.
     padding: 3px 10px;
     cursor: pointer;
   }
+  .pane-toggle { min-width: 28px; }
   .editor { min-height: 0; }
-  .preview { grid-area: preview; display: grid; grid-template-rows: auto 1fr; height: 38vh; }
-  .preview-bar { display: flex; align-items: center; padding: 4px 10px; background: var(--soil-bar); font-size: 13px; }
+  .panel-body { overflow: auto; background: var(--soil-deep); font-size: 13px; }
   .stage { position: relative; background: #000; display: grid; place-items: center; }
   .note { margin: 0; color: var(--text-muted); }
 
+  [data-collapsed] > .pane-body { display: none; }
+  .side[data-collapsed] { grid-template-rows: 1fr; }
+  .side[data-collapsed] .nav { align-items: end; padding: 8px 4px; }
+  .side[data-collapsed] .nav a { display: none; }
+
+  /* The edge sits over the border between two panes, so it takes no grid track. */
+  .edge { position: absolute; z-index: 2; touch-action: none; }
+  .edge:hover, .edge:focus-visible { background: var(--sprout); outline: none; }
+  [data-edge='lesson'] { top: 0; bottom: 0; right: -4px; width: 7px; cursor: col-resize; }
+  .side[data-collapsed] [data-edge='lesson'] { display: none; }
+  [data-edge='panel'], [data-edge='preview'] { left: 0; right: 0; top: -4px; height: 7px; cursor: row-resize; }
+  .edge[hidden] { display: none; }
+
+  .tour[data-expanded] .preview { position: fixed; inset: 0; z-index: 10; }
+  .tour[data-expanded] .preview > .pane-body { display: grid; }
+  .tour[data-expanded] .preview .pane-toggle, .tour[data-expanded] .preview .edge { display: none; }
+
   @media (max-width: 800px) {
     :global(html:has(.tour)), :global(html:has(.tour) body) { overflow: auto; }
-    .tour {
-      height: auto;
-      grid-template-columns: 1fr;
-      grid-template-rows: auto;
-      grid-template-areas: 'lesson' 'nav' 'editor' 'preview';
-    }
+    .tour { height: auto; grid-template-columns: 1fr; }
+    .work { grid-template-rows: auto; }
     .lesson { padding: 20px 16px; }
     .nav { flex-wrap: wrap; padding: 8px 16px; }
-    .editor-pane { height: 60vh; }
+    .side[data-collapsed] .nav a { display: inline-flex; }
+    .editor-pane:not([data-collapsed]) { height: 60vh; }
+    .panel:not([data-collapsed]) { height: 160px; }
+    .preview:not([data-collapsed]) { height: 38vh; }
+    .edge { display: none; }
   }
 </style>
