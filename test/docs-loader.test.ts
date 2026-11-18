@@ -3,6 +3,7 @@ import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { brotliDecompressSync } from 'node:zlib';
 import type { Loader, LoaderContext } from 'astro/loaders';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { docsLoader } from '../src/loaders/docs';
@@ -72,7 +73,9 @@ describe('docsLoader with a release that has a tour.tar.gz', () => {
     const site = (path: string) => readFile(new URL(`projects/rocco/tour/_r/v0.2.0/${path}`, files));
     expect(JSON.parse((await site('manifest.json')).toString()).buildId).toBe('b7f3c2');
     expect((await site('preview/index.html')).toString()).toBe('<!doctype html>\n<p>preview</p>\n');
-    expect(Array.from(await site('worker/compile.wasm'))).toEqual([0, 97, 115, 109, 1, 0, 0, 0]);
+    expect(Array.from(brotliDecompressSync(await site('worker/compile.wasm.br')))).toEqual([0, 97, 115, 109, 1, 0, 0, 0]);
+    expect((await site('worker/compile.js')).toString()).toContain('"compile.wasm.br"');
+    await expect(site('worker/compile.wasm')).rejects.toThrow('ENOENT');
     expect(entries.get('#source')).toMatchObject({
       tour: { buildId: 'b7f3c2', tag: 'v0.2.0', rocNightly: 'nightly-2026-10-11-7d256b9' },
     });

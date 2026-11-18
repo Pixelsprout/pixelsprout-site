@@ -5,6 +5,7 @@ import type { Loader } from 'astro/loaders';
 import { docsFilesDir } from '../integrations/docs-files';
 import { API_BASE, API_PACKAGES, DOCS_BASE, pageSlug, replaceMarkers, rewriteLinks } from '../lib/docs';
 import type { DocsSource } from '../lib/docs-source';
+import { cachedBrotli } from '../lib/brotli';
 import { readRoccoSources } from '../lib/rocco-sources';
 import { tourSiteFiles } from '../lib/tour';
 import { tourSteps, type GuidePage } from '../lib/tour-steps';
@@ -67,7 +68,8 @@ export function docsLoader(): Loader {
       store.clear();
       const site = siteFiles(files);
 
-      for (const file of tourSiteFiles(tour)) await site.write(file.path, file.data);
+      const compress = cachedBrotli(fileURLToPath(new URL('tour-brotli/', config.cacheDir)));
+      for (const file of await tourSiteFiles(tour, compress)) await site.write(file.path, file.data);
       let buildInfo: TourBuildInfo | null = null;
       if (tour.kind === 'tour') {
         buildInfo = tour.buildInfo;

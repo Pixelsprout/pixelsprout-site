@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@vercel/routing-utils": "6.6.1",
     "shiki": "4.4.3",
     "typescript": "^6.0.3",
     "vitest": "^5.0.2"

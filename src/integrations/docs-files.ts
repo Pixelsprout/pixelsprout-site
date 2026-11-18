@@ -22,6 +22,12 @@ const TYPES: Record<string, string> = {
   '.woff2': 'font/woff2',
 };
 
+export function devHeaders(path: string): Record<string, string> {
+  const encoded = path.endsWith('.br');
+  const type = TYPES[extname(encoded ? path.slice(0, -'.br'.length) : path)] ?? 'application/octet-stream';
+  return encoded ? { 'Content-Type': type, 'Content-Encoding': 'br' } : { 'Content-Type': type };
+}
+
 const exists = (path: string, kind: 'file' | 'folder' = 'file') =>
   stat(path).then((info) => (kind === 'file' ? info.isFile() : info.isDirectory()), () => false);
 
@@ -52,7 +58,7 @@ export function docsFiles(): AstroIntegration {
           }
           const file = pathname.endsWith('/') ? index : path;
           if (!(await exists(file))) return next();
-          res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream' }).end(await readFile(file));
+          res.writeHead(200, devHeaders(file)).end(await readFile(file));
         });
       },
       'astro:build:done': async ({ dir }) => {

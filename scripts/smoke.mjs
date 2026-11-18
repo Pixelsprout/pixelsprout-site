@@ -88,6 +88,13 @@ check(
   'the Tour artifacts are not at the tag path',
 );
 check(existsSync('dist/projects/rocco/tour/_r/v0.2.0-dev/manifest.json'), 'the Tour artifacts lack manifest.json');
+check(readdirSync('dist/projects/rocco/tour/_r').join() === 'v0.2.0-dev', 'the build deploys a Tour tag other than the current one');
+check(
+  existsSync('dist/projects/rocco/tour/_r/v0.2.0-dev/preview/index.wasm.br') && !existsSync('dist/projects/rocco/tour/_r/v0.2.0-dev/preview/index.wasm'),
+  'the build deploys a plain .wasm file or no .wasm.br file',
+);
+check(read('projects/rocco/tour/_r/v0.2.0-dev/preview/index.js').includes("locateFile('index.wasm.br')"), 'the Preview does not request index.wasm.br');
+check(JSON.parse(read('projects/rocco/tour/artifacts.json')).tag === 'v0.2.0-dev', 'the build lacks the Tour artifacts list');
 const step = read('projects/rocco/tour/01-cube/index.html');
 check(step.includes('Press Run in the Tour.') && !step.includes('roc main.roc'), 'the Tour step does not apply the tour markers');
 check(step.includes('href="/projects/rocco/docs/install/"'), 'the Tour step does not link to the Guide');

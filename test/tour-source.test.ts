@@ -136,7 +136,7 @@ describe('the Tour artifacts from DOCS_SOURCE', () => {
     expect(calls).toHaveLength(0);
     expect(tour.origin).toBe(`${CHECKOUT}/build/tour`);
     expect(tour.buildInfo).toEqual({ buildId: 'checkout-build', tag: 'v0.2.0-dev', rocNightly: 'nightly-2026-10-11-7d256b9' });
-    expect(tour.files.map((f) => f.path)).toEqual(['manifest.json', 'preview/index.html']);
+    expect(tour.files.map((f) => f.path)).toEqual(['manifest.json', 'preview/index.html', 'preview/index.js', 'preview/index.wasm']);
   });
 
   it('says the Tour is not available when the checkout has no build/tour/', async () => {
