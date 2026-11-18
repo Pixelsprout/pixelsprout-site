@@ -36,7 +36,7 @@ const garden = defineCollection({
   }),
 });
 
-// The loader adds one source entry, with the id SOURCE_ID, beside the pages.
+// The loader adds one source entry, with the id SOURCE_ID, and the Tour steps beside the pages.
 const docs = defineCollection({
   loader: docsLoader(),
   schema: z.discriminatedUnion('kind', [
@@ -47,6 +47,15 @@ const docs = defineCollection({
       ref: z.string().nullable(),
       api: z.array(z.string()),
       tour: tourBuildInfoSchema.nullable(),
+    }),
+    z.object({
+      kind: z.literal('step'),
+      slug: z.string(),
+      path: z.string(),
+      title: z.string(),
+      order: z.number(),
+      start: z.string(),
+      answer: z.string(),
     }),
   ]),
 });

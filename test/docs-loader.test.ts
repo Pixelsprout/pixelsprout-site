@@ -25,6 +25,18 @@ function stubFetch(routes: Record<string, unknown>) {
   });
 }
 
+// Reads the flat `key: value` front matter of the fixture pages, as Astro's YAML would.
+function frontmatter(text: string) {
+  const block = /^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? '';
+  return Object.fromEntries(
+    block.split('\n').map((line) => {
+      const [key, ...rest] = line.split(':');
+      const value = rest.join(':').trim().replace(/^"(.*)"$/, '$1');
+      return [key, /^\d+$/.test(value) ? Number(value) : value];
+    }),
+  );
+}
+
 // Holds only the context fields the docs loader reads, so a new field it reads must be added here.
 async function runLoader(loader: Loader) {
   const cacheDir = pathToFileURL(`${await mkdtemp(join(tmpdir(), 'docs-loader-'))}/`);
@@ -32,6 +44,8 @@ async function runLoader(loader: Loader) {
   const context = {
     store: { clear: () => entries.clear(), set: ({ id, data }: { id: string; data: unknown }) => entries.set(id, data) },
     parseData: async ({ data }: { data: unknown }) => data,
+    renderMarkdown: async (text: string) => ({ html: text, metadata: { frontmatter: frontmatter(text) } }),
+    generateDigest: (text: string) => String(text.length),
     logger: { info: () => {}, warn: () => {} },
     config: { cacheDir, root: new URL('../', import.meta.url) },
   };
@@ -62,5 +76,29 @@ describe('docsLoader with a release that has a tour.tar.gz', () => {
     expect(entries.get('#source')).toMatchObject({
       tour: { buildId: 'b7f3c2', tag: 'v0.2.0', rocNightly: 'nightly-2026-10-11-7d256b9' },
     });
+  });
+});
+
+describe('docsLoader with a checkout that has Tour artifacts', () => {
+  it('stores one Tour step per Tutorial page, with its lesson, starting source and answer', async () => {
+    vi.stubEnv('DOCS_SOURCE', new URL('fixtures/rocco', import.meta.url).pathname);
+
+    const { entries } = await runLoader(docsLoader());
+
+    const step = entries.get('#tour/01-cube') as Record<string, unknown>;
+    expect(step).toMatchObject({ kind: 'step', slug: '01-cube', title: 'A window, a camera and a cube', order: 1 });
+    expect(step.start).toBe(readFileSync(new URL('fixtures/rocco/examples/tutorial/00-start/main.roc', import.meta.url), 'utf8'));
+    expect(step.answer).toBe(readFileSync(new URL('fixtures/rocco/examples/tutorial/01-cube/main.roc', import.meta.url), 'utf8'));
+    expect([...entries.keys()].filter((id) => id.startsWith('#tour/'))).toEqual(['#tour/01-cube']);
+  });
+
+  it('stores no Tour steps when there are no Tour artifacts', async () => {
+    vi.stubEnv('DOCS_SOURCE', '');
+    vi.stubEnv('VERCEL', '');
+    stubFetch({ [LATEST]: { tag_name: 'v0.2.0', assets: [] } });
+
+    const { entries } = await runLoader(docsLoader());
+
+    expect([...entries.keys()].filter((id) => id.startsWith('#tour/'))).toEqual([]);
   });
 });

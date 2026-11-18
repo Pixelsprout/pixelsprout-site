@@ -22,6 +22,8 @@ export async function getPosts(): Promise<Post[]> {
 type DocsEntry = CollectionEntry<'docs'>;
 type PageData = Extract<DocsEntry['data'], { kind: 'page' }>;
 type SourceData = Extract<DocsEntry['data'], { kind: 'source' }>;
+type StepData = Extract<DocsEntry['data'], { kind: 'step' }>;
+export type TourStepEntry = DocsEntry & { data: StepData };
 export type DocsPage = DocsEntry & { data: PageData; slug: string; title: string; order: number };
 
 export async function getDocs(): Promise<{ source: SourceData; pages: DocsPage[] }> {
@@ -36,4 +38,9 @@ export async function getDocs(): Promise<{ source: SourceData; pages: DocsPage[]
 
 export async function getTour(): Promise<Tour> {
   return tourOf((await getDocs()).source.tour);
+}
+
+export async function getTourSteps(): Promise<TourStepEntry[]> {
+  const entries = await getCollection('docs');
+  return entries.filter((e): e is TourStepEntry => e.data.kind === 'step').sort((a, b) => a.data.order - b.data.order);
 }

@@ -7,9 +7,11 @@ import { API_BASE, API_PACKAGES, DOCS_BASE, pageSlug, replaceMarkers, rewriteLin
 import type { DocsSource } from '../lib/docs-source';
 import { readRoccoSources } from '../lib/rocco-sources';
 import { tourSiteFiles } from '../lib/tour';
+import { tourSteps, type GuidePage } from '../lib/tour-steps';
 import type { TourBuildInfo } from '../lib/tour-source';
 
 export const SOURCE_ID = '#source';
+export const stepId = (slug: string) => `#tour/${slug}`;
 
 const FONTS = [
   'node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2',
@@ -89,12 +91,25 @@ export function docsLoader(): Loader {
       await writeDocsFiles(source, config.root, site);
       const pages = source.guide.filter((file) => file.path.endsWith('.md'));
       if (pages.length === 0) logger.warn(`${source.origin} has no guide pages`);
+      const guidePages: GuidePage[] = [];
       for (const file of pages) {
         const id = pageSlug(file.path);
-        const text = rewriteLinks(replaceMarkers(new TextDecoder().decode(file.data), source.markers, file.path), file.path, source.ref);
+        const markdown = new TextDecoder().decode(file.data);
+        const text = rewriteLinks(replaceMarkers(markdown, source.markers, file.path), file.path, source.ref);
         const rendered = await renderMarkdown(text);
         const data = await parseData({ id, data: { ...rendered.metadata?.frontmatter, kind: 'page', path: file.path } });
         store.set({ id, data, rendered, digest: generateDigest(text) });
+        if (data.kind === 'page') guidePages.push({ path: file.path, text: markdown, title: data.title, order: data.order });
+      }
+      // Without Tour artifacts there is nothing to run, so the step pages say that the Tour is not available.
+      if (buildInfo) {
+        const steps = tourSteps({ pages: guidePages, sources: source.sources, ref: source.ref, markers: source.markers });
+        for (const { text, ...step } of steps) {
+          const id = stepId(step.slug);
+          const data = await parseData({ id, data: { kind: 'step', ...step } });
+          store.set({ id, data, rendered: await renderMarkdown(text), digest: generateDigest(text) });
+        }
+        logger.info(`Built ${steps.length} Tour steps.`);
       }
       const api = API_PACKAGES.filter((name) => source.api.some((file) => file.path === `${name}/index.html`));
       await setSource(source.ref, api);
