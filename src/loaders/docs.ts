@@ -64,12 +64,12 @@ export function docsLoader(): Loader {
       const site = siteFiles(files);
 
       for (const file of tourSiteFiles(tour)) await site.write(file.path, file.data);
-      const manifest = tour.kind === 'tour' ? tour.manifest : null;
-      if (tour.kind === 'tour') logger.info(`Loaded the Tour artifacts ${tour.manifest.buildId} from ${tour.origin}.`);
+      const buildInfo = tour.kind === 'tour' ? tour.buildInfo : null;
+      if (tour.kind === 'tour') logger.info(`Loaded the Tour artifacts ${tour.buildInfo.buildId} from ${tour.origin}.`);
       else logger.info(`No Tour: ${tour.reason}. The Tour pages say that the Tour is not available for this release.`);
 
       const setSource = async (ref: string | null, api: string[]) => {
-        const data = { kind: 'source', origin: source.origin, ref, api, tour: manifest };
+        const data = { kind: 'source', origin: source.origin, ref, api, tour: buildInfo };
         store.set({ id: SOURCE_ID, data: await parseData({ id: SOURCE_ID, data }) });
       };
 

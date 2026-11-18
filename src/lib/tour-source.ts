@@ -1,34 +1,38 @@
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
+import { z } from 'astro/zod';
 import { byPath, readFolder } from './files';
 import { REPO, SourceError, errorMessage, expandHome, fetchBytes, type Request } from './github';
 import { readTarGz, type TarFile } from './tar';
 
 export const TOUR_ASSET = 'tour.tar.gz';
 
-export type TourManifest = { buildId: string; tag: string; rocNightly: string };
+export const tourBuildInfoSchema = z.object({ buildId: z.string(), tag: z.string(), rocNightly: z.string() });
+
+export type TourBuildInfo = z.infer<typeof tourBuildInfoSchema>;
 
 export type TourSource =
   | { kind: 'none'; reason: string }
-  | { kind: 'tour'; origin: string; manifest: TourManifest; files: TarFile[] };
+  | { kind: 'tour'; origin: string; buildInfo: TourBuildInfo; files: TarFile[] };
 
 // The tag names a folder on the site, /projects/rocco/tour/_r/<tag>/.
 const SAFE_TAG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
-// The engine owns the rest of the Tour artifacts, so the site parses only this file.
-function readManifest(files: TarFile[], where: string): TourManifest {
+// The engine owns the rest of the Tour artifacts, so the site parses only manifest.json.
+function readBuildInfo(files: TarFile[], where: string): TourBuildInfo {
   const file = files.find((f) => f.path === 'manifest.json');
   if (!file) throw new SourceError(`There is no manifest.json in ${where}`);
-  let fields: Partial<Record<keyof TourManifest, unknown>> | null = null;
+  let json: unknown;
   try {
-    fields = JSON.parse(new TextDecoder().decode(file.data));
+    json = JSON.parse(new TextDecoder().decode(file.data));
   } catch {}
-  const { buildId, tag, rocNightly } = fields ?? {};
-  if (typeof buildId !== 'string' || typeof tag !== 'string' || typeof rocNightly !== 'string') {
+  const parsed = tourBuildInfoSchema.safeParse(json);
+  if (!parsed.success) {
     throw new SourceError(`The manifest.json in ${where} is not an object with the strings buildId, tag and rocNightly`);
   }
+  const { tag } = parsed.data;
   if (!SAFE_TAG.test(tag)) throw new SourceError(`The manifest.json in ${where} has the tag ${tag}, which is not a safe folder name`);
-  return { buildId, tag, rocNightly };
+  return parsed.data;
 }
 
 export async function readReleaseTour(request: Request, tag: string, download: string | undefined): Promise<TourSource> {
@@ -41,9 +45,9 @@ export async function readReleaseTour(request: Request, tag: string, download: s
   } catch (error) {
     throw new SourceError(`The ${TOUR_ASSET} of ${tag} does not extract: ${errorMessage(error)}`);
   }
-  const manifest = readManifest(files, where);
-  if (manifest.tag !== tag) throw new SourceError(`The manifest.json in ${where} has the tag ${manifest.tag}, not ${tag}`);
-  return { kind: 'tour', origin: `${REPO}@${tag}`, manifest, files };
+  const buildInfo = readBuildInfo(files, where);
+  if (buildInfo.tag !== tag) throw new SourceError(`The manifest.json in ${where} has the tag ${buildInfo.tag}, not ${tag}`);
+  return { kind: 'tour', origin: `${REPO}@${tag}`, buildInfo, files };
 }
 
 export async function readTourCheckout(source: string): Promise<TourSource> {
@@ -52,5 +56,5 @@ export async function readTourCheckout(source: string): Promise<TourSource> {
   const exists = await stat(folder).then((info) => info.isDirectory(), () => false);
   if (!exists) return { kind: 'none', reason: `${where} does not exist` };
   const files = await readFolder(folder, '');
-  return { kind: 'tour', origin: where, manifest: readManifest(files, where), files };
+  return { kind: 'tour', origin: where, buildInfo: readBuildInfo(files, where), files };
 }

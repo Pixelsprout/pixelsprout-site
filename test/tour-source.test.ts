@@ -63,14 +63,14 @@ function tarOf(name: string, body: string): Uint8Array {
 }
 
 describe('the Tour artifacts from the latest release', () => {
-  it('unpacks tour.tar.gz from the same release response as docs.tar.gz and parses its manifest', async () => {
+  it('unpacks tour.tar.gz from the same release response as docs.tar.gz and parses its build info', async () => {
     const { fetch, calls } = fakeFetch(release(fixture('tour.tar.gz')));
     const { docs, tour } = await readRoccoSources({ fetch });
     if (tour.kind !== 'tour') throw new Error(`expected the Tour, got ${tour.reason}`);
     expect(docs.kind).toBe('docs');
     expect(calls.filter((url) => url === LATEST)).toHaveLength(1);
     expect(tour.origin).toBe('Pixelsprout/rocco-engine@v0.2.0');
-    expect(tour.manifest).toEqual({ buildId: 'b7f3c2', tag: 'v0.2.0', rocNightly: 'nightly-2026-10-11-7d256b9' });
+    expect(tour.buildInfo).toEqual({ buildId: 'b7f3c2', tag: 'v0.2.0', rocNightly: 'nightly-2026-10-11-7d256b9' });
     expect(tour.files.map((f) => f.path)).toEqual(['manifest.json', 'preview/index.html', 'worker/compile.js', 'worker/compile.wasm']);
     expect(Array.from(tour.files[3].data)).toEqual([0, 97, 115, 109, 1, 0, 0, 0]);
     expect(text(tour.files[1].data)).toBe('<!doctype html>\n<p>preview</p>\n');
@@ -135,7 +135,7 @@ describe('the Tour artifacts from DOCS_SOURCE', () => {
     if (tour.kind !== 'tour') throw new Error(`expected the Tour, got ${tour.reason}`);
     expect(calls).toHaveLength(0);
     expect(tour.origin).toBe(`${CHECKOUT}/build/tour`);
-    expect(tour.manifest).toEqual({ buildId: 'checkout-build', tag: 'v0.2.0-dev', rocNightly: 'nightly-2026-10-11-7d256b9' });
+    expect(tour.buildInfo).toEqual({ buildId: 'checkout-build', tag: 'v0.2.0-dev', rocNightly: 'nightly-2026-10-11-7d256b9' });
     expect(tour.files.map((f) => f.path)).toEqual(['manifest.json', 'preview/index.html']);
   });
 

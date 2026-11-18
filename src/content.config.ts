@@ -4,6 +4,7 @@ import { z } from 'astro/zod';
 import { dexLoader } from './loaders/dex';
 import { docsLoader } from './loaders/docs';
 import { POST_TYPE_SLUGS } from './lib/post-meta';
+import { tourBuildInfoSchema } from './lib/tour-source';
 
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: process.env.POSTS_DIR ?? './src/content/posts' }),
@@ -35,7 +36,7 @@ const garden = defineCollection({
   }),
 });
 
-// The loader adds one source entry, with the id SOURCE_ID, beside the pages. Its tour is the Tour manifest, or null.
+// The loader adds one source entry, with the id SOURCE_ID, beside the pages.
 const docs = defineCollection({
   loader: docsLoader(),
   schema: z.discriminatedUnion('kind', [
@@ -45,7 +46,7 @@ const docs = defineCollection({
       origin: z.string(),
       ref: z.string().nullable(),
       api: z.array(z.string()),
-      tour: z.object({ buildId: z.string(), tag: z.string(), rocNightly: z.string() }).nullable(),
+      tour: tourBuildInfoSchema.nullable(),
     }),
   ]),
 });

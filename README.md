@@ -69,8 +69,8 @@ and the build log says so.
 ## How the Tour artifacts get here
 
 The build takes `tour.tar.gz` from the same latest release as `docs.tar.gz`. It extracts the whole tarball to
-`/projects/rocco/tour/_r/<tag>/` and parses only its `manifest.json`, `{ buildId, tag, rocNightly }`. Tour pages get the
-manifest from `getTour()` in `src/lib/content.ts`.
+`/projects/rocco/tour/_r/<tag>/` and parses only its `manifest.json`, `{ buildId, tag, rocNightly }`. Tour pages get this
+build info from `getTour()` in `src/lib/content.ts`.
 
 - If the release has no `tour.tar.gz`, the build still succeeds, and `getTour()` gives the message "The Tour is not
   available for this release".
