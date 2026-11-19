@@ -20,11 +20,25 @@ export function attempt<T>(action: () => T, fallback: T): T {
   }
 }
 
+// A bundle URL ends in <name>-<content hash>.tar.zst, and its folder names the release.
+const BUNDLE_URL = /https:\/\/[^\s"]+\/([A-Za-z0-9_]+)-[A-Za-z0-9]+\.tar\.zst/g;
+
+// The worker mounts only the bundles of its own release, so a saved edit that still names an
+// earlier release's bundles fails with InvalidDependency. Point each one at this release's bundle
+// of the same name.
+function onCurrentBundles(saved: string, start: string): string {
+  const current = new Map([...start.matchAll(BUNDLE_URL)].map(([url, name]) => [name, url]));
+  return saved.replace(BUNDLE_URL, (url, name: string) => current.get(name) ?? url);
+}
+
 export function stepEdits(storage: EditStorage | null, step: StepSources): StepEdits {
   const key = editKey(step.slug);
   const forget = () => attempt(() => storage?.removeItem(key), undefined);
   return {
-    initial: () => attempt(() => storage?.getItem(key), null) ?? step.start,
+    initial: () => {
+      const saved = attempt(() => storage?.getItem(key), null) ?? null;
+      return saved === null ? step.start : onCurrentBundles(saved, step.start);
+    },
     save: (text) => {
       if (text === step.start) forget();
       else attempt(() => storage?.setItem(key, text), undefined);
