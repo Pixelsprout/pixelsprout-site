@@ -56,6 +56,24 @@ describe('stepEdits', () => {
     expect(stepEdits(storage, window).initial()).toBe('app [cube]');
   });
 
+  it('moves a saved edit onto the bundles of the current release', () => {
+    const url = (tag: string, name: string, hash: string) =>
+      `https://github.com/Pixelsprout/rocco-engine/releases/download/${tag}/${name}-${hash}.tar.zst`;
+    const header = (tag: string, platformHash: string) =>
+      `app [main] { pf: platform "${url(tag, 'platform', platformHash)}", mesh: "${url(tag, 'mesh', 'M3sh')}" }`;
+    const step = { slug: '03-moving', start: `${header('v0.15.1', 'B6Z3')}\nmain = 1`, answer: '' };
+    const storage = memoryStorage();
+    storage.setItem('rocco-tour:edit:03-moving', `${header('v0.15.0', 'GUUw')}\nmain = 2`);
+    expect(stepEdits(storage, step).initial()).toBe(`${header('v0.15.1', 'B6Z3')}\nmain = 2`);
+  });
+
+  it('leaves a bundle URL alone when the starting source has no bundle of that name', () => {
+    const other = 'https://example.com/v1/extra-Xyz.tar.zst';
+    const storage = memoryStorage();
+    stepEdits(storage, window).save(`app [mine] { x: "${other}" }`);
+    expect(stepEdits(storage, window).initial()).toBe(`app [mine] { x: "${other}" }`);
+  });
+
   it('works with no storage, or a storage that throws', () => {
     for (const storage of [null, brokenStorage]) {
       const edits = stepEdits(storage, window);
